@@ -1,4 +1,3 @@
-import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import {
     DropdownMenu,
@@ -127,9 +126,6 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                                 <p className="truncate text-sm font-semibold text-sidebar-foreground">
                                     {user.name}
                                 </p>
-                                <p className="truncate text-xs capitalize text-sidebar-foreground/50">
-                                    {user.role}
-                                </p>
                             </div>
                         )}
                     </div>
@@ -156,9 +152,6 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                            {user.role}
-                        </Badge>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-accent">
