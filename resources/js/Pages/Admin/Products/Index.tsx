@@ -23,7 +23,7 @@ import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Package, Plus, Trash2, X } from 'lucide-react';
-import { FormEventHandler, useMemo, useState } from 'react';
+import { FormEventHandler, useEffect, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -58,7 +58,7 @@ export default function ProductsIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-    const { data, setData, post, processing, errors, reset } = useForm<{
+    const { data, setData, post, processing, errors, reset, transform } = useForm<{
         _method: string;
         category_id: string;
         name: string;
@@ -88,6 +88,14 @@ export default function ProductsIndex() {
         minimum_quantity: '',
     });
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        transform((formData) => {
+            const transformed = { ...formData };
+            if (!transformed.photo) delete transformed.photo;
+            return transformed;
+        });
+    }, [transform]);
 
     const openCreate = () => {
         setEditingProduct(null);
