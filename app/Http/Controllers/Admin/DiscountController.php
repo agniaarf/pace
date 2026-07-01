@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Discount;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -18,8 +19,11 @@ class DiscountController extends Controller
             ->latest()
             ->get();
 
+        $products = Product::orderBy('name')->get(['id', 'name', 'sku', 'brand']);
+
         return Inertia::render('Admin/Discounts/Index', [
             'discounts' => $discounts,
+            'products' => $products,
         ]);
     }
 
