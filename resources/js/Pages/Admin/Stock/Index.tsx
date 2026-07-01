@@ -97,8 +97,8 @@ export default function StockIndex() {
                         </Link>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                        <div className="relative flex-1 max-w-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative max-w-sm flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input placeholder="Cari berdasarkan nama produk atau SKU..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
                                 onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/stock?search=${encodeURIComponent(search)}`; }} />

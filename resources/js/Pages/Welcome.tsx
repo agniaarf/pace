@@ -17,16 +17,16 @@ export default function Welcome() {
                     <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-chart-5/10 blur-3xl" />
                 </div>
 
-                <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-6">
+                <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col px-4 sm:px-6">
                     {/* Nav */}
                     <header className="flex items-center justify-between py-6">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <img
                                 src="/images/pace-logo.png"
                                 alt="PACE"
-                                className="h-11 w-11 rounded-xl object-cover shadow-card ring-1 ring-border"
+                                className="h-9 w-9 rounded-xl object-cover shadow-card ring-1 ring-border sm:h-11 sm:w-11"
                             />
-                            <span className="text-xl font-extrabold tracking-tight">
+                            <span className="text-lg font-extrabold tracking-tight sm:text-xl">
                                 {app.name}
                             </span>
                         </div>
@@ -53,13 +53,13 @@ export default function Welcome() {
                     </header>
 
                     {/* Hero */}
-                    <main className="flex flex-1 flex-col items-center justify-center py-16 text-center">
+                    <main className="flex flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-sm font-medium text-muted-foreground backdrop-blur">
                             <Sparkles className="h-4 w-4 text-primary" />
                             Sistem Kasir & Manajemen Retail
                         </div>
 
-                        <h1 className="max-w-3xl text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
+                        <h1 className="max-w-3xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl">
                             Own Your <span className="text-gradient-primary">Pace</span>,
                             <br />
                             Unleash Your{' '}

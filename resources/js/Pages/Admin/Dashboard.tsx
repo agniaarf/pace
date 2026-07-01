@@ -186,19 +186,19 @@ export default function Dashboard() {
                                 <div className="space-y-2">
                                     {recentTransactions.map((tx) => (
                                         <Link key={tx.id} href={`/admin/transactions/${tx.id}`}>
-                                            <div className="flex items-center justify-between rounded-lg border border-border p-3 transition hover:border-primary hover:bg-accent">
+                                            <div className="flex flex-col gap-2 rounded-lg border border-border p-3 transition hover:border-primary hover:bg-accent sm:flex-row sm:items-center sm:justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent">
                                                         <ShoppingCart className="h-4 w-4 text-primary" />
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-semibold">{tx.transaction_number}</p>
-                                                        <p className="text-xs text-muted-foreground">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-semibold">{tx.transaction_number}</p>
+                                                        <p className="truncate text-xs text-muted-foreground">
                                                             {tx.customer_name ?? 'Umum'} · {tx.cashier_name ?? 'Tidak diketahui'} · {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-between gap-3 sm:justify-end">
                                                     <span className="font-mono text-sm font-bold">{formatCurrency(tx.total_amount)}</span>
                                                     <Badge variant={tx.status === 'completed' ? 'success' : 'default'}>
                                                         {tx.status}

@@ -31,6 +31,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
     const { auth } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
+    const [tooltip, setTooltip] = useState<{ label: string; x: number; y: number } | null>(null);
     const user = auth.user as AuthUser;
 
     const toggleCollapse = () => {
@@ -98,16 +99,27 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                title={collapsed ? item.label : undefined}
-                                className={`group flex animate-fade-in-up items-center rounded-xl text-sm font-medium transition-all ${
+                                onMouseEnter={(e) => {
+                                    if (collapsed) {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        setTooltip({ label: item.label, x: rect.right + 8, y: rect.top + rect.height / 2 });
+                                    }
+                                }}
+                                onMouseLeave={() => collapsed && setTooltip(null)}
+                                className={`nav-wave group relative flex animate-fade-in-up items-center rounded-xl text-sm font-medium transition-all ${
                                     collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'
                                 } ${
                                     isActive
                                         ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
-                                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                                        : 'text-sidebar-foreground/70 hover:text-sidebar-accent-foreground'
                                 }`}
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
+                                {isActive && (
+                                    <span
+                                        className="absolute -left-3 top-1/2 h-7 w-1.5 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-orange-400 to-primary shadow-[0_0_8px_rgba(234,88,12,0.6)]"
+                                    />
+                                )}
                                 <Icon className="h-5 w-5 shrink-0" />
                                 {!collapsed && item.label}
                             </Link>
@@ -181,6 +193,16 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                 {/* Page content */}
                 <main className="flex-1 animate-fade-in p-4 lg:p-8">{children}</main>
             </div>
+
+            {/* Custom sidebar tooltip (collapsed mode) */}
+            {tooltip && (
+                <div
+                    className="sidebar-tooltip"
+                    style={{ left: tooltip.x, top: tooltip.y, transform: 'translateY(-50%)' }}
+                >
+                    {tooltip.label}
+                </div>
+            )}
         </div>
     );
 }

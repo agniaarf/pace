@@ -229,7 +229,7 @@ export default function Cashier() {
                     </div>
                 )}
 
-                <div className="flex h-[calc(100vh-140px)] flex-col gap-4 overflow-hidden lg:flex-row">
+                <div className="flex h-auto flex-col gap-4 lg:h-[calc(100vh-140px)] lg:flex-row lg:overflow-hidden">
                     {/* Product grid */}
                     <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4 animate-fade-in">
                         <div className="relative mb-4">
@@ -295,7 +295,7 @@ export default function Cashier() {
                     </div>
 
                     {/* Cart sidebar */}
-                    <div className="flex w-full flex-shrink-0 flex-col rounded-xl border border-border bg-card lg:w-80 animate-fade-in">
+                    <div className="flex w-full flex-shrink-0 flex-col rounded-xl border border-border bg-card lg:w-80 lg:flex-shrink-0 animate-fade-in lg:overflow-hidden">
                         {/* Customer */}
                         <div className="border-b border-border px-4 py-3">
                             <div className="mb-2 flex items-center justify-between">
@@ -331,7 +331,7 @@ export default function Cashier() {
                         <div className="border-b border-border px-5 py-3">
                             <h3 className="text-sm font-bold text-foreground">Keranjang ({cart.length})</h3>
                         </div>
-                        <div className="flex-1 space-y-2 overflow-y-auto p-4">
+                        <div className="flex-1 space-y-2 overflow-y-auto p-4 max-h-[40vh] lg:max-h-none">
                             {cart.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                                     <ShoppingCart className="mb-3 h-8 w-8 opacity-40" />

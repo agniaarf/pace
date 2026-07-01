@@ -68,8 +68,8 @@ export default function ReportsIndex() {
             <AdminLayout title="Laporan" subtitle="Analisis bisnis dan wawasan" activeRoute="/admin/reports">
                 <div className="space-y-6">
                     {/* Period selector + export */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex gap-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap gap-2">
                             <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">7 Hari Terakhir</Button></Link>
                             <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">30 Hari Terakhir</Button></Link>
                             <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">90 Hari Terakhir</Button></Link>

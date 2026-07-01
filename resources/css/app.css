@@ -417,6 +417,109 @@
     animation: track-run 1.5s ease-in-out infinite;
 }
 
+/* Sidebar nav water-wave hover effect */
+.nav-wave {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.nav-wave::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(234, 88, 12, 0.12) 30%,
+        rgba(249, 115, 22, 0.18) 50%,
+        rgba(234, 88, 12, 0.12) 70%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    background-position: 200% 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.nav-wave::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(234, 88, 12, 0.15) 0%, transparent 60%);
+    transform: translate(-50%, 0) scale(0);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.nav-wave:hover::before {
+    opacity: 1;
+    animation: wave-flow 1.8s ease-in-out infinite;
+}
+
+.nav-wave:hover::after {
+    transform: translate(-50%, -30%) scale(1);
+    opacity: 1;
+}
+
+@keyframes wave-flow {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Custom sidebar tooltip */
+.sidebar-tooltip {
+    position: fixed;
+    z-index: 50;
+    pointer-events: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(28, 18, 10, 0.95);
+    color: #fef3c7;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: tooltip-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.sidebar-tooltip::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 8px;
+    height: 8px;
+    background: rgba(28, 18, 10, 0.95);
+    border-radius: 2px;
+}
+
+@keyframes tooltip-in {
+    0% {
+        opacity: 0;
+        transform: translateX(-4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
