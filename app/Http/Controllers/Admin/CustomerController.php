@@ -28,12 +28,12 @@ class CustomerController extends Controller
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'gender' => ['nullable', Rule::enum(['male', 'female'])],
+            'gender' => ['nullable', Rule::in(['male', 'female'])],
             'date_of_birth' => ['nullable', 'date'],
             'province' => ['nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
         Customer::create($validated);
@@ -48,12 +48,12 @@ class CustomerController extends Controller
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'gender' => ['nullable', Rule::enum(['male', 'female'])],
+            'gender' => ['nullable', Rule::in(['male', 'female'])],
             'date_of_birth' => ['nullable', 'date'],
             'province' => ['nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
         $customer->update($validated);

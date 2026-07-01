@@ -31,16 +31,18 @@ class DiscountController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'type' => ['required', Rule::enum(['percentage', 'nominal'])],
+            'type' => ['required', Rule::in(['percentage', 'nominal'])],
             'value' => ['required', 'numeric', 'min:0'],
-            'applies_to' => ['required', Rule::enum(['all', 'category', 'product'])],
+            'applies_to' => ['required', Rule::in(['all', 'product'])],
             'target_ids' => ['nullable', 'array'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
-        Discount::create($validated);
+        $discount = Discount::create($validated);
+
+        $this->syncProductDiscounts($discount);
 
         return back()->with('success', 'Discount created successfully.');
     }
@@ -49,24 +51,39 @@ class DiscountController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'type' => ['required', Rule::enum(['percentage', 'nominal'])],
+            'type' => ['required', Rule::in(['percentage', 'nominal'])],
             'value' => ['required', 'numeric', 'min:0'],
-            'applies_to' => ['required', Rule::enum(['all', 'category', 'product'])],
+            'applies_to' => ['required', Rule::in(['all', 'product'])],
             'target_ids' => ['nullable', 'array'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
         $discount->update($validated);
+
+        $this->syncProductDiscounts($discount);
 
         return back()->with('success', 'Discount updated successfully.');
     }
 
     public function destroy(Discount $discount): RedirectResponse
     {
+        Product::where('discount_id', $discount->id)->update(['discount_id' => null]);
+
         $discount->delete();
 
         return back()->with('success', 'Discount deleted successfully.');
+    }
+
+    private function syncProductDiscounts(Discount $discount): void
+    {
+        Product::where('discount_id', $discount->id)->update(['discount_id' => null]);
+
+        if ($discount->applies_to === 'all') {
+            Product::query()->update(['discount_id' => $discount->id]);
+        } elseif ($discount->applies_to === 'product' && !empty($discount->target_ids)) {
+            Product::whereIn('id', $discount->target_ids)->update(['discount_id' => $discount->id]);
+        }
     }
 }

@@ -45,7 +45,7 @@ class ProductController extends Controller
             'selling_price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
             'minimum_quantity' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -80,7 +80,7 @@ class ProductController extends Controller
             'selling_price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'status' => ['required', Rule::enum(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
 
         if ($request->hasFile('photo')) {
