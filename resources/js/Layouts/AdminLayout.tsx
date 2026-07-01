@@ -2,15 +2,15 @@ import AppLayout, { type NavItem } from '@/Components/Layout/AppLayout';
 import { BarChart3, Boxes, FolderTree, LayoutDashboard, Percent, Tags, TrendingDown, Users, Package } from 'lucide-react';
 
 const adminNavItems: NavItem[] = [
-    { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Products', href: '/admin/products', icon: Boxes, permission: 'products.read' },
-    { label: 'Categories', href: '/admin/categories', icon: FolderTree, permission: 'categories.read' },
-    { label: 'Stock', href: '/admin/stock', icon: Package, permission: 'stock.read' },
-    { label: 'Stock Alerts', href: '/admin/stock/alerts', icon: TrendingDown, permission: 'stock.read' },
-    { label: 'Customers', href: '/admin/customers', icon: Users, permission: 'customers.read' },
-    { label: 'Discounts', href: '/admin/discounts', icon: Percent, permission: 'discounts.read' },
-    { label: 'Reports', href: '/admin/reports', icon: BarChart3, permission: 'reports.view' },
-    { label: 'Tags', href: '/admin/tags', icon: Tags },
+    { label: 'Dasbor', href: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Produk', href: '/admin/products', icon: Boxes, permission: 'products.read' },
+    { label: 'Kategori', href: '/admin/categories', icon: FolderTree, permission: 'categories.read' },
+    { label: 'Stok', href: '/admin/stock', icon: Package, permission: 'stock.read' },
+    { label: 'Peringatan Stok', href: '/admin/stock/alerts', icon: TrendingDown, permission: 'stock.read' },
+    { label: 'Pelanggan', href: '/admin/customers', icon: Users, permission: 'customers.read' },
+    { label: 'Diskon', href: '/admin/discounts', icon: Percent, permission: 'discounts.read' },
+    { label: 'Laporan', href: '/admin/reports', icon: BarChart3, permission: 'reports.view' },
+    { label: 'Tag', href: '/admin/tags', icon: Tags },
 ];
 
 interface AdminLayoutProps {

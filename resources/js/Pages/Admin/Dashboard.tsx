@@ -49,22 +49,22 @@ export default function Dashboard() {
     const { stats, recentTransactions, dailyRevenue, lowStockItems } = usePage<PageProps & AdminDashboardProps>().props;
 
     const cards = [
-        { label: 'Total Revenue', value: formatCurrency(stats.totalRevenue), icon: DollarSign, gradient: 'from-orange-500 to-red-500' },
-        { label: "Today's Revenue", value: formatCurrency(stats.todayRevenue), icon: TrendingUp, gradient: 'from-amber-500 to-orange-500' },
-        { label: 'Total Transactions', value: stats.totalTransactions.toLocaleString(), icon: ShoppingCart, gradient: 'from-green-500 to-emerald-500' },
-        { label: 'Total Products', value: stats.totalProducts.toLocaleString(), icon: Boxes, gradient: 'from-blue-500 to-cyan-500' },
+        { label: 'Total Pendapatan', value: formatCurrency(stats.totalRevenue), icon: DollarSign, gradient: 'from-orange-500 to-red-500' },
+        { label: 'Pendapatan Hari Ini', value: formatCurrency(stats.todayRevenue), icon: TrendingUp, gradient: 'from-amber-500 to-orange-500' },
+        { label: 'Total Transaksi', value: stats.totalTransactions.toLocaleString(), icon: ShoppingCart, gradient: 'from-green-500 to-emerald-500' },
+        { label: 'Total Produk', value: stats.totalProducts.toLocaleString(), icon: Boxes, gradient: 'from-blue-500 to-cyan-500' },
     ];
 
     const chartData = dailyRevenue.map(d => ({
-        date: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        date: new Date(d.date).toLocaleDateString('id-ID', { weekday: 'short' }),
         revenue: d.revenue,
         count: d.count,
     }));
 
     return (
         <>
-            <Head title="Admin Dashboard" />
-            <AdminLayout title="Dashboard" subtitle="Overview of your store performance" activeRoute="/admin/dashboard">
+            <Head title="Dasbor Admin" />
+            <AdminLayout title="Dasbor" subtitle="Ringkasan performa toko Anda" activeRoute="/admin/dashboard">
                 <div className="space-y-6">
                     {/* Stat cards */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -96,7 +96,7 @@ export default function Dashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <TrendingUp className="h-5 w-5 text-primary" />
-                                    Revenue Trend (Last 7 Days)
+                                    Tren Pendapatan (7 Hari Terakhir)
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -113,7 +113,7 @@ export default function Dashboard() {
                                             <YAxis tick={{ fontSize: 12, fill: '#888' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
                                             <Tooltip
                                                 contentStyle={{ borderRadius: '12px', border: '1px solid #eee', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-                                                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                                                formatter={(value) => [formatCurrency(Number(value)), 'Pendapatan']}
                                             />
                                             <Area type="monotone" dataKey="revenue" stroke="#EA580C" strokeWidth={2} fill="url(#colorRevenue)" />
                                         </AreaChart>
@@ -121,7 +121,7 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="flex h-[280px] flex-col items-center justify-center text-muted-foreground">
                                         <TrendingUp className="mb-3 h-10 w-10 opacity-30" />
-                                        <p className="text-sm">No transaction data yet. Revenue charts will appear here.</p>
+                                        <p className="text-sm">Belum ada data transaksi. Grafik pendapatan akan muncul di sini.</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -131,7 +131,7 @@ export default function Dashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <AlertTriangle className="h-5 w-5 text-red-500" />
-                                    Low Stock Alerts
+                                    Peringatan Stok Menipis
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -142,24 +142,24 @@ export default function Dashboard() {
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-sm font-semibold">{item.product_name}</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        Stock: <span className={item.quantity <= 0 ? 'font-bold text-red-500' : 'font-bold text-amber-600'}>{item.quantity}</span> / Min: {item.minimum_quantity}
+                                                        Stok: <span className={item.quantity <= 0 ? 'font-bold text-red-500' : 'font-bold text-amber-600'}>{item.quantity}</span> / Min: {item.minimum_quantity}
                                                     </p>
                                                 </div>
                                                 <Badge variant={item.quantity <= 0 ? 'destructive' : 'default'}>
-                                                    {item.quantity <= 0 ? 'Out' : 'Low'}
+                                                    {item.quantity <= 0 ? 'Habis' : 'Menipis'}
                                                 </Badge>
                                             </div>
                                         ))}
                                         <Link href="/admin/stock">
                                             <Button variant="outline" size="sm" className="w-full justify-center">
-                                                View All Stock <ArrowRight className="h-3.5 w-3.5" />
+                                                Lihat Semua Stok <ArrowRight className="h-3.5 w-3.5" />
                                             </Button>
                                         </Link>
                                     </div>
                                 ) : (
                                     <div className="flex h-[200px] flex-col items-center justify-center text-muted-foreground">
                                         <Boxes className="mb-3 h-8 w-8 opacity-30" />
-                                        <p className="text-sm">All products are well stocked.</p>
+                                        <p className="text-sm">Semua produk stoknya aman.</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -172,11 +172,11 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5 text-primary" />
-                                    Recent Transactions
+                                    Transaksi Terbaru
                                 </CardTitle>
                                 <Link href="/admin/transactions">
                                     <Button variant="ghost" size="sm">
-                                        View All <ArrowRight className="h-3.5 w-3.5" />
+                                        Lihat Semua <ArrowRight className="h-3.5 w-3.5" />
                                     </Button>
                                 </Link>
                             </div>
@@ -194,7 +194,7 @@ export default function Dashboard() {
                                                     <div>
                                                         <p className="text-sm font-semibold">{tx.transaction_number}</p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {tx.customer_name ?? 'Walk-in'} · {tx.cashier_name ?? 'Unknown'} · {new Date(tx.transaction_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                            {tx.customer_name ?? 'Umum'} · {tx.cashier_name ?? 'Tidak diketahui'} · {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                             ) : (
                                 <div className="flex h-[160px] flex-col items-center justify-center text-muted-foreground">
                                     <ShoppingCart className="mb-3 h-8 w-8 opacity-30" />
-                                    <p className="text-sm">No transactions yet. Process sales from the cashier page.</p>
+                                    <p className="text-sm">Belum ada transaksi. Proses penjualan dari halaman kasir.</p>
                                 </div>
                             )}
                         </CardContent>

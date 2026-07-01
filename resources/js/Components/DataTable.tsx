@@ -32,9 +32,9 @@ export function DataTable<T>({
     columns,
     searchKeys,
     searchFn,
-    searchPlaceholder = 'Search...',
+    searchPlaceholder = 'Cari...',
     emptyIcon: EmptyIcon,
-    emptyMessage = 'No data found.',
+    emptyMessage = 'Tidak ada data ditemukan.',
     toolbarRight,
     toolbarLeft,
     rowKey,
@@ -166,8 +166,8 @@ export function DataTable<T>({
                     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <p className="text-sm text-muted-foreground">
-                                Showing <span className="font-semibold text-foreground">{from}</span>–
-                                <span className="font-semibold text-foreground">{to}</span> of{' '}
+                                Menampilkan <span className="font-semibold text-foreground">{from}</span>–
+                                <span className="font-semibold text-foreground">{to}</span> dari{' '}
                                 <span className="font-semibold text-foreground">{total}</span>
                             </p>
                             <select
@@ -176,7 +176,7 @@ export function DataTable<T>({
                                 className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-medium text-foreground transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                             >
                                 {perPageOptions.map((n) => (
-                                    <option key={n} value={n}>{n} / page</option>
+                                    <option key={n} value={n}>{n} / halaman</option>
                                 ))}
                             </select>
                         </div>

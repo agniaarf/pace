@@ -94,36 +94,36 @@ export default function DiscountsIndex() {
     const columns: Column<Discount>[] = [
         {
             key: 'name',
-            header: 'Name',
+            header: 'Nama',
             render: (d) => <span className="font-medium">{d.name}</span>,
         },
         {
             key: 'type',
-            header: 'Type',
+            header: 'Tipe',
             render: (d) => <span className="capitalize">{d.type}</span>,
         },
         {
             key: 'value',
-            header: 'Value',
+            header: 'Nilai',
             render: (d) => <span className="font-semibold text-primary">{formatDiscountValue(d)}</span>,
         },
         {
             key: 'applies_to',
-            header: 'Applies To',
+            header: 'Berlaku Untuk',
             render: (d) => <span className="capitalize">{d.applies_to}</span>,
         },
         {
             key: 'period',
-            header: 'Period',
+            header: 'Periode',
             render: (d) => (
                 <span className="text-xs text-muted-foreground">
-                    {d.start_date ? `${d.start_date} → ${d.end_date ?? '—'}` : 'No limit'}
+                    {d.start_date ? `${d.start_date} → ${d.end_date ?? '—'}` : 'Tanpa batas'}
                 </span>
             ),
         },
         {
             key: 'products_count',
-            header: 'Products',
+            header: 'Produk',
             render: (d) => <Badge variant="secondary">{d.products_count}</Badge>,
         },
         {
@@ -133,7 +133,7 @@ export default function DiscountsIndex() {
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: 'Aksi',
             headerClassName: 'text-right',
             className: 'text-right',
             render: (d) => (
@@ -147,8 +147,8 @@ export default function DiscountsIndex() {
 
     return (
         <>
-            <Head title="Discounts" />
-            <AdminLayout title="Discounts" subtitle="Manage promotional discounts" activeRoute="/admin/discounts">
+            <Head title="Diskon" />
+            <AdminLayout title="Diskon" subtitle="Kelola diskon promosi" activeRoute="/admin/discounts">
                 <div className="space-y-6">
                     {flash.success && <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
                     {flash.error && <div className="animate-fade-in rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
@@ -157,12 +157,12 @@ export default function DiscountsIndex() {
                         data={discounts}
                         columns={columns}
                         searchKeys={['name']}
-                        searchPlaceholder="Search discounts..."
+                        searchPlaceholder="Cari diskon..."
                         emptyIcon={Percent}
-                        emptyMessage="No discounts found."
+                        emptyMessage="Tidak ada diskon ditemukan."
                         rowKey={(d) => d.id}
                         toolbarRight={
-                            <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Discount</Button>
+                            <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Tambah Diskon</Button>
                         }
                     />
                 </div>
@@ -171,18 +171,18 @@ export default function DiscountsIndex() {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editing ? 'Edit Discount' : 'Add Discount'}</DialogTitle>
-                        <DialogDescription>{editing ? 'Update discount information.' : 'Create a new promotional discount.'}</DialogDescription>
+                        <DialogTitle>{editing ? 'Edit Diskon' : 'Tambah Diskon'}</DialogTitle>
+                        <DialogDescription>{editing ? 'Perbarui informasi diskon.' : 'Buat diskon promosi baru.'}</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Discount Name *</Label>
+                            <Label htmlFor="name">Nama Diskon *</Label>
                             <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Summer Sale 20%" />
                             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>Type</Label>
+                                <Label>Tipe</Label>
                                 <Select value={data.type} onValueChange={(v) => setData('type', v as 'percentage' | 'nominal')}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -192,29 +192,29 @@ export default function DiscountsIndex() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="value">Value *</Label>
+                                <Label htmlFor="value">Nilai *</Label>
                                 <Input id="value" type="number" step="0.01" value={data.value} onChange={(e) => setData('value', e.target.value)} placeholder="0" />
                                 {errors.value && <p className="text-xs text-destructive">{errors.value}</p>}
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label>Applies To</Label>
+                            <Label>Berlaku Untuk</Label>
                             <Select value={data.applies_to} onValueChange={(v) => setData('applies_to', v as 'all' | 'category' | 'product')}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Products</SelectItem>
-                                    <SelectItem value="category">Specific Category</SelectItem>
-                                    <SelectItem value="product">Specific Product</SelectItem>
+                                    <SelectItem value="all">Semua Produk</SelectItem>
+                                    <SelectItem value="category">Kategori Tertentu</SelectItem>
+                                    <SelectItem value="product">Produk Tertentu</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="start_date">Start Date</Label>
+                                <Label htmlFor="start_date">Tanggal Mulai</Label>
                                 <Input id="start_date" type="date" value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="end_date">End Date</Label>
+                                <Label htmlFor="end_date">Tanggal Berakhir</Label>
                                 <Input id="end_date" type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} />
                             </div>
                         </div>
@@ -223,14 +223,14 @@ export default function DiscountsIndex() {
                             <Select value={data.status} onValueChange={(v) => setData('status', v as 'active' | 'inactive')}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                    <SelectItem value="active">Aktif</SelectItem>
+                                    <SelectItem value="inactive">Nonaktif</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" disabled={processing}>{processing ? 'Saving...' : editing ? 'Update' : 'Create'}</Button>
+                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
+                            <Button type="submit" variant="gradient" disabled={processing}>{processing ? 'Menyimpan...' : editing ? 'Perbarui' : 'Buat'}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -239,12 +239,12 @@ export default function DiscountsIndex() {
             <Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Delete Discount?</DialogTitle>
-                        <DialogDescription>This action cannot be undone.</DialogDescription>
+                        <DialogTitle>Hapus Diskon?</DialogTitle>
+                        <DialogDescription>Tindakan ini tidak dapat dibatalkan.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

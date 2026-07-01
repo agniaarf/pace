@@ -40,14 +40,14 @@ export default function Welcome() {
                                 }
                                 className="rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:scale-105"
                             >
-                                Go to Dashboard
+                                Ke Dasbor
                             </Link>
                         ) : (
                             <Link
                                 href="/login"
                                 className="rounded-full bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-glow transition hover:scale-105"
                             >
-                                Sign In
+                                Masuk
                             </Link>
                         )}
                     </header>
@@ -56,7 +56,7 @@ export default function Welcome() {
                     <main className="flex flex-1 flex-col items-center justify-center py-16 text-center">
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-sm font-medium text-muted-foreground backdrop-blur">
                             <Sparkles className="h-4 w-4 text-primary" />
-                            Point of Sale & Retail Management
+                            Sistem Kasir & Manajemen Retail
                         </div>
 
                         <h1 className="max-w-3xl text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
@@ -67,9 +67,9 @@ export default function Welcome() {
                         </h1>
 
                         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-                            A modern POS built for sports retail — manage products,
-                            stock, customers, and lightning-fast checkouts, all in one
-                            beautifully crafted workspace.
+                            Sebuah POS modern untuk retail olahraga — kelola produk,
+                            stok, pelanggan, dan transaksi kilat, semua dalam satu
+                            ruang kerja yang dirancang dengan indah.
                         </p>
 
                         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -77,14 +77,14 @@ export default function Welcome() {
                                 href={auth.user ? '#' : '/login'}
                                 className="group inline-flex items-center gap-2 rounded-full bg-gradient-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-glow transition hover:scale-105"
                             >
-                                Get Started
+                                Mulai Sekarang
                                 <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
                             </Link>
                         </div>
 
                         {/* Feature chips */}
                         <div className="mt-16 grid w-full max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-                            {['Fast Checkout', 'Live Stock', 'Smart Discounts', 'Insights'].map(
+                            {['Transaksi Cepat', 'Stok Real-time', 'Diskon Pintar', 'Insight'].map(
                                 (feature) => (
                                     <div
                                         key={feature}

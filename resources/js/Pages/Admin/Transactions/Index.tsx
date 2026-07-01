@@ -39,27 +39,27 @@ export default function TransactionsIndex() {
     const columns: Column<Transaction>[] = [
         {
             key: 'transaction_number',
-            header: 'Transaction #',
+            header: 'No. Transaksi',
             render: (t) => <span className="font-mono text-xs font-semibold">{t.transaction_number}</span>,
         },
         {
             key: 'date',
-            header: 'Date',
+            header: 'Tanggal',
             render: (t) => (
                 <span className="text-sm text-muted-foreground">
-                    {new Date(t.transaction_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {new Date(t.transaction_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </span>
             ),
         },
         {
             key: 'cashier',
-            header: 'Cashier',
+            header: 'Kasir',
             render: (t) => t.cashier?.username ?? '—',
         },
         {
             key: 'customer',
-            header: 'Customer',
-            render: (t) => t.customer?.full_name ?? 'Walk-in',
+            header: 'Pelanggan',
+            render: (t) => t.customer?.full_name ?? 'Umum',
         },
         {
             key: 'total',
@@ -73,7 +73,7 @@ export default function TransactionsIndex() {
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: 'Aksi',
             headerClassName: 'text-right',
             className: 'text-right',
             render: (t) => (
@@ -86,16 +86,16 @@ export default function TransactionsIndex() {
 
     return (
         <>
-            <Head title="Transactions" />
-            <AdminLayout title="Transactions" subtitle="View all transaction history" activeRoute="/admin/transactions">
+            <Head title="Transaksi" />
+            <AdminLayout title="Transaksi" subtitle="Lihat semua riwayat transaksi" activeRoute="/admin/transactions">
                 <div className="space-y-6">
                     <DataTable
                         data={transactions}
                         columns={columns}
                         searchKeys={['transaction_number']}
-                        searchPlaceholder="Search transaction number..."
+                        searchPlaceholder="Cari nomor transaksi..."
                         emptyIcon={Receipt}
-                        emptyMessage="No transactions found."
+                        emptyMessage="Tidak ada transaksi ditemukan."
                         rowKey={(t) => t.id}
                     />
                 </div>

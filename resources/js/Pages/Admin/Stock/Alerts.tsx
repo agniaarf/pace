@@ -28,34 +28,34 @@ export default function StockAlerts() {
 
     return (
         <>
-            <Head title="Stock Alerts" />
-            <AdminLayout title="Stock Alerts" subtitle={`${totalAlerts} products need attention`} activeRoute="/admin/stock/alerts">
+            <Head title="Peringatan Stok" />
+            <AdminLayout title="Peringatan Stok" subtitle={`${totalAlerts} produk perlu perhatian`} activeRoute="/admin/stock/alerts">
                 <div className="space-y-6">
                     {/* Summary cards */}
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Card className="border-amber-200 bg-amber-50/50">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-semibold text-amber-700">Low Stock</CardTitle>
+                                <CardTitle className="text-sm font-semibold text-amber-700">Stok Menipis</CardTitle>
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">
                                     <TrendingDown className="h-5 w-5" />
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-3xl font-extrabold text-amber-700">{lowStock.length}</p>
-                                <p className="mt-1 text-xs text-amber-600">Products at or below minimum threshold</p>
+                                <p className="mt-1 text-xs text-amber-600">Produk di bawah ambang batas minimum</p>
                             </CardContent>
                         </Card>
 
                         <Card className="border-red-200 bg-red-50/50">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-semibold text-red-700">Out of Stock</CardTitle>
+                                <CardTitle className="text-sm font-semibold text-red-700">Stok Habis</CardTitle>
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500 text-white">
                                     <PackageX className="h-5 w-5" />
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-3xl font-extrabold text-red-700">{outOfStock.length}</p>
-                                <p className="mt-1 text-xs text-red-600">Products with zero inventory</p>
+                                <p className="mt-1 text-xs text-red-600">Produk dengan inventaris nol</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -66,18 +66,18 @@ export default function StockAlerts() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <PackageX className="h-5 w-5 text-red-500" />
-                                    Out of Stock ({outOfStock.length})
+                                    Stok Habis ({outOfStock.length})
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Product</TableHead>
+                                            <TableHead>Produk</TableHead>
                                             <TableHead>SKU</TableHead>
-                                            <TableHead>Category</TableHead>
-                                            <TableHead className="text-center">Quantity</TableHead>
-                                            <TableHead className="text-center">Min. Threshold</TableHead>
+                                            <TableHead>Kategori</TableHead>
+                                            <TableHead className="text-center">Jumlah</TableHead>
+                                            <TableHead className="text-center">Batas Min.</TableHead>
                                             <TableHead className="text-center">Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -90,7 +90,7 @@ export default function StockAlerts() {
                                                 <TableCell className="text-center font-bold text-red-500">{item.quantity}</TableCell>
                                                 <TableCell className="text-center">{item.minimum_quantity}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="destructive">Out of Stock</Badge>
+                                                    <Badge variant="destructive">Stok Habis</Badge>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -106,18 +106,18 @@ export default function StockAlerts() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <AlertTriangle className="h-5 w-5 text-amber-500" />
-                                    Low Stock ({lowStock.length})
+                                    Stok Menipis ({lowStock.length})
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Product</TableHead>
+                                            <TableHead>Produk</TableHead>
                                             <TableHead>SKU</TableHead>
-                                            <TableHead>Category</TableHead>
-                                            <TableHead className="text-center">Quantity</TableHead>
-                                            <TableHead className="text-center">Min. Threshold</TableHead>
+                                            <TableHead>Kategori</TableHead>
+                                            <TableHead className="text-center">Jumlah</TableHead>
+                                            <TableHead className="text-center">Batas Min.</TableHead>
                                             <TableHead className="text-center">Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -130,7 +130,7 @@ export default function StockAlerts() {
                                                 <TableCell className="text-center font-bold text-amber-600">{item.quantity}</TableCell>
                                                 <TableCell className="text-center">{item.minimum_quantity}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="default">Low Stock</Badge>
+                                                    <Badge variant="default">Stok Menipis</Badge>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -145,15 +145,15 @@ export default function StockAlerts() {
                         <Card>
                             <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                                 <AlertTriangle className="mb-4 h-12 w-12 text-emerald-400" />
-                                <p className="text-lg font-semibold text-foreground">All products are well stocked!</p>
-                                <p className="mt-1 text-sm">No stock alerts at this time.</p>
+                                <p className="text-lg font-semibold text-foreground">Semua produk stoknya aman!</p>
+                                <p className="mt-1 text-sm">Tidak ada peringatan stok saat ini.</p>
                             </CardContent>
                         </Card>
                     )}
 
                     <Link href="/admin/stock">
                         <Button variant="outline">
-                            <ArrowLeft className="h-4 w-4" />Back to Stock Management
+                            <ArrowLeft className="h-4 w-4" />Kembali ke Manajemen Stok
                         </Button>
                     </Link>
                 </div>

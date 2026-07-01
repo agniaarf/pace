@@ -9,7 +9,7 @@ import {
     DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, ChevronsLeft, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import type { AuthUser, PageProps } from '@/types';
 
@@ -31,7 +31,14 @@ interface AppLayoutProps {
 export default function AppLayout({ children, navItems, activeRoute, title, subtitle }: AppLayoutProps) {
     const { auth } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
     const user = auth.user as AuthUser;
+
+    const toggleCollapse = () => {
+        const next = !collapsed;
+        setCollapsed(next);
+        localStorage.setItem('sidebar-collapsed', String(next));
+    };
 
     return (
         <div className="flex min-h-screen bg-background">
@@ -45,23 +52,42 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
 
             {/* Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-gradient-sidebar transition-transform duration-300 lg:translate-x-0 ${
+                className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-gradient-sidebar transition-all duration-300 lg:translate-x-0 ${
+                    collapsed ? 'w-16' : 'w-64'
+                } ${
                     sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
                 {/* Logo area */}
-                <div className="flex items-center justify-between px-5 py-5">
+                <div className={`flex items-center px-3 py-4 ${collapsed ? 'flex-col gap-2' : 'justify-between px-5'}`}>
                     <img
                         src="/images/pace-logo.png"
                         alt="PACE"
-                        className="h-12 w-auto object-contain"
+                        className={`object-contain ${collapsed ? 'h-8 w-auto' : 'h-11 w-auto'}`}
                     />
-                    <button
-                        onClick={() => setSidebarOpen(false)}
-                        className="text-sidebar-foreground/60 lg:hidden"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
+                    {collapsed ? (
+                        <button
+                            onClick={toggleCollapse}
+                            className="hidden items-center justify-center rounded-lg p-1.5 text-sidebar-foreground/50 transition hover:bg-sidebar-accent hover:text-sidebar-foreground lg:flex"
+                        >
+                            <ChevronsLeft className="h-4 w-4 rotate-180 transition-transform duration-300" />
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={toggleCollapse}
+                                className="hidden items-center justify-center rounded-lg p-1.5 text-sidebar-foreground/50 transition hover:bg-sidebar-accent hover:text-sidebar-foreground lg:flex"
+                            >
+                                <ChevronsLeft className="h-4 w-4 transition-transform duration-300" />
+                            </button>
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="text-sidebar-foreground/60 lg:hidden"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Nav */}
@@ -73,7 +99,10 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`group flex animate-fade-in-up items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                title={collapsed ? item.label : undefined}
+                                className={`group flex animate-fade-in-up items-center rounded-xl text-sm font-medium transition-all ${
+                                    collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'
+                                } ${
                                     isActive
                                         ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
                                         : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
@@ -81,7 +110,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                                 style={{ animationDelay: `${idx * 50}ms` }}
                             >
                                 <Icon className="h-5 w-5 shrink-0" />
-                                {item.label}
+                                {!collapsed && item.label}
                             </Link>
                         );
                     })}
@@ -89,24 +118,26 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
 
                 {/* User card at bottom */}
                 <div className="border-t border-sidebar-border px-3 py-4">
-                    <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent/50 px-3 py-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
+                    <div className={`flex items-center gap-3 rounded-xl bg-sidebar-accent/50 py-2.5 ${collapsed ? 'justify-center px-0' : 'px-3'}`}>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
                             {user.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-sidebar-foreground">
-                                {user.name}
-                            </p>
-                            <p className="truncate text-xs capitalize text-sidebar-foreground/50">
-                                {user.role}
-                            </p>
-                        </div>
+                        {!collapsed && (
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-sidebar-foreground">
+                                    {user.name}
+                                </p>
+                                <p className="truncate text-xs capitalize text-sidebar-foreground/50">
+                                    {user.role}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </aside>
 
             {/* Main content */}
-            <div className="flex flex-1 flex-col lg:pl-64">
+            <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
                 {/* Topbar */}
                 <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/80 px-4 py-3.5 backdrop-blur-xl lg:px-8">
                     <div className="flex items-center gap-3">
@@ -146,7 +177,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                                 <DropdownMenuItem asChild>
                                     <Link href="/logout" method="post" as="button" className="w-full cursor-pointer text-destructive hover:text-destructive focus:text-destructive">
                                         <LogOut className="h-4 w-4" />
-                                        Sign Out
+                                        Keluar
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

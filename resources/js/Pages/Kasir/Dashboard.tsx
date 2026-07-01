@@ -19,25 +19,25 @@ export default function Dashboard() {
 
     const cards = [
         {
-            label: "Today's Transactions",
+            label: 'Transaksi Hari Ini',
             value: stats.todayTransactions.toString(),
             icon: ShoppingCart,
             gradient: 'from-orange-500 to-red-500',
         },
         {
-            label: "Today's Revenue",
+            label: 'Pendapatan Hari Ini',
             value: formatCurrency(stats.todayRevenue),
             icon: Wallet,
             gradient: 'from-green-500 to-emerald-500',
         },
         {
-            label: 'Total Products',
+            label: 'Total Produk',
             value: stats.totalProducts.toString(),
             icon: Boxes,
             gradient: 'from-amber-500 to-orange-500',
         },
         {
-            label: 'Available Products',
+            label: 'Produk Tersedia',
             value: stats.availableProducts.toString(),
             icon: TrendingUp,
             gradient: 'from-violet-500 to-purple-500',
@@ -46,8 +46,8 @@ export default function Dashboard() {
 
     return (
         <>
-            <Head title="Kasir Dashboard" />
-            <KasirLayout title="Dashboard" subtitle="Your cashier overview for today" activeRoute="/kasir/dashboard">
+            <Head title="Dasbor Kasir" />
+            <KasirLayout title="Dasbor" subtitle="Ringkasan kasir Anda hari ini" activeRoute="/kasir/dashboard">
                 <div className="space-y-6">
                     {/* Stat cards */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -76,12 +76,12 @@ export default function Dashboard() {
                     {/* Quick start card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Quick Start</CardTitle>
+                            <CardTitle>Mulai Cepat</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-muted-foreground">
-                                Use the <span className="font-semibold text-foreground">Cashier</span> page to start processing transactions.
-                                You can search products, add them to cart, and complete checkout in seconds.
+                                Gunakan halaman <span className="font-semibold text-foreground">Kasir</span> untuk mulai memproses transaksi.
+                                Anda dapat mencari produk, menambahkannya ke keranjang, dan menyelesaikan pembayaran dalam hitungan detik.
                             </p>
                         </CardContent>
                     </Card>

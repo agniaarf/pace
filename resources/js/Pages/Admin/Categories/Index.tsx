@@ -85,8 +85,8 @@ export default function CategoriesIndex() {
 
     return (
         <>
-            <Head title="Categories" />
-            <AdminLayout title="Categories" subtitle="Organize products into categories" activeRoute="/admin/categories">
+            <Head title="Kategori" />
+            <AdminLayout title="Kategori" subtitle="Atur produk ke dalam kategori" activeRoute="/admin/categories">
                 <div className="space-y-6">
                     {flash.success && (
                         <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>
@@ -98,22 +98,22 @@ export default function CategoriesIndex() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input placeholder="Search categories..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
+                            <Input placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
                                 onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/categories?search=${encodeURIComponent(search)}`; }} />
                         </div>
-                        <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Category</Button>
+                        <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Tambah Kategori</Button>
                     </div>
 
                     <div className="rounded-xl border border-border bg-card shadow-card">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Code</TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Products</TableHead>
+                                    <TableHead>Kode</TableHead>
+                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Deskripsi</TableHead>
+                                    <TableHead>Produk</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -121,7 +121,7 @@ export default function CategoriesIndex() {
                                     <TableRow>
                                         <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                                             <FolderTree className="mx-auto mb-3 h-10 w-10 opacity-40" />
-                                            No categories found.
+                                            Tidak ada kategori ditemukan.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -130,8 +130,8 @@ export default function CategoriesIndex() {
                                             <TableCell className="font-mono text-xs">{cat.code}</TableCell>
                                             <TableCell className="font-medium">{cat.name}</TableCell>
                                             <TableCell className="text-muted-foreground">{cat.description ?? '—'}</TableCell>
-                                            <TableCell><Badge variant="secondary">{cat.products_count} products</Badge></TableCell>
-                                            <TableCell><Badge variant={cat.is_active ? 'success' : 'outline'}>{cat.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                                            <TableCell><Badge variant="secondary">{cat.products_count} produk</Badge></TableCell>
+                                            <TableCell><Badge variant={cat.is_active ? 'success' : 'outline'}>{cat.is_active ? 'Aktif' : 'Nonaktif'}</Badge></TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1">
                                                     <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}><Edit className="h-4 w-4" /></Button>
@@ -155,35 +155,35 @@ export default function CategoriesIndex() {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{editing ? 'Edit Category' : 'Add Category'}</DialogTitle>
-                        <DialogDescription>{editing ? 'Update category information.' : 'Create a new product category.'}</DialogDescription>
+                        <DialogTitle>{editing ? 'Edit Kategori' : 'Tambah Kategori'}</DialogTitle>
+                        <DialogDescription>{editing ? 'Perbarui informasi kategori.' : 'Buat kategori produk baru.'}</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="code">Code *</Label>
+                            <Label htmlFor="code">Kode *</Label>
                             <Input id="code" value={data.code} onChange={(e) => setData('code', e.target.value)} placeholder="e.g. running-shoes" />
                             {errors.code && <p className="text-xs text-destructive">{errors.code}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="name">Name *</Label>
+                            <Label htmlFor="name">Nama *</Label>
                             <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Running Shoes" />
                             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} rows={2} placeholder="Category description..." />
+                            <Label htmlFor="description">Deskripsi</Label>
+                            <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} rows={2} placeholder="Deskripsi kategori..." />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="sort_order">Sort Order</Label>
+                            <Label htmlFor="sort_order">Urutan Sortir</Label>
                             <Input id="sort_order" type="number" value={data.sort_order} onChange={(e) => setData('sort_order', e.target.value)} />
                         </div>
                         <div className="flex items-center gap-3">
-                            <Label>Active</Label>
+                            <Label>Aktif</Label>
                             <Switch checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit" variant="gradient" disabled={processing}>{processing ? 'Saving...' : editing ? 'Update' : 'Create'}</Button>
+                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
+                            <Button type="submit" variant="gradient" disabled={processing}>{processing ? 'Menyimpan...' : editing ? 'Perbarui' : 'Buat'}</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -192,12 +192,12 @@ export default function CategoriesIndex() {
             <Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Delete Category?</DialogTitle>
-                        <DialogDescription>This action cannot be undone. Categories with existing products cannot be deleted.</DialogDescription>
+                        <DialogTitle>Hapus Kategori?</DialogTitle>
+                        <DialogDescription>Tindakan ini tidak dapat dibatalkan. Kategori dengan produk yang ada tidak dapat dihapus.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

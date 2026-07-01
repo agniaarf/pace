@@ -129,7 +129,7 @@ export default function ProductsIndex() {
     const columns: Column<Product>[] = [
         {
             key: 'name',
-            header: 'Name',
+            header: 'Nama',
             render: (p) => (
                 <div className="flex flex-col">
                     <span className="font-medium">{p.name}</span>
@@ -144,24 +144,24 @@ export default function ProductsIndex() {
         },
         {
             key: 'category',
-            header: 'Category',
+            header: 'Kategori',
             render: (p) => p.category?.name ?? '—',
         },
         {
             key: 'price',
-            header: 'Price',
+            header: 'Harga',
             render: (p) => <span className="font-semibold">{formatCurrency(Number(p.selling_price))}</span>,
         },
         {
             key: 'stock',
-            header: 'Stock',
+            header: 'Stok',
             render: (p) =>
                 p.stock ? (
                     <Badge variant={p.stock.quantity <= 0 ? 'destructive' : p.stock.quantity <= (p.stock.minimum_quantity || 5) ? 'warning' : 'success'}>
-                        {p.stock.quantity} units
+                        {p.stock.quantity} unit
                     </Badge>
                 ) : (
-                    <Badge variant="outline">No stock</Badge>
+                    <Badge variant="outline">Tidak ada stok</Badge>
                 ),
         },
         {
@@ -171,7 +171,7 @@ export default function ProductsIndex() {
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: 'Aksi',
             headerClassName: 'text-right',
             className: 'text-right',
             render: (p) => (
@@ -189,8 +189,8 @@ export default function ProductsIndex() {
 
     return (
         <>
-            <Head title="Products" />
-            <AdminLayout title="Products" subtitle="Manage your product catalog" activeRoute="/admin/products">
+            <Head title="Produk" />
+            <AdminLayout title="Produk" subtitle="Kelola katalog produk Anda" activeRoute="/admin/products">
                 <div className="space-y-6">
                     {flash.success && (
                         <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
@@ -207,14 +207,14 @@ export default function ProductsIndex() {
                         data={filteredProducts}
                         columns={columns}
                         searchKeys={['name', 'sku', 'brand']}
-                        searchPlaceholder="Search products..."
+                        searchPlaceholder="Cari produk..."
                         emptyIcon={Package}
-                        emptyMessage="No products found. Click 'Add Product' to create one."
+                        emptyMessage="Produk tidak ditemukan. Klik 'Tambah Produk' untuk membuat baru."
                         rowKey={(p) => p.id}
                         toolbarRight={
                             <Button variant="gradient" onClick={openCreate}>
                                 <Plus className="h-4 w-4" />
-                                Add Product
+                                Tambah Produk
                             </Button>
                         }
                         toolbarLeft={
@@ -223,10 +223,10 @@ export default function ProductsIndex() {
                                 onValueChange={setCategoryFilter}
                             >
                                 <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Category" />
+                                    <SelectValue placeholder="Kategori" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem value="all">Semua Kategori</SelectItem>
                                     {categories.map((cat) => (
                                         <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
                                     ))}
@@ -241,16 +241,16 @@ export default function ProductsIndex() {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{editingProduct ? 'Edit Product' : 'Add Product'}</DialogTitle>
+                        <DialogTitle>{editingProduct ? 'Edit Produk' : 'Tambah Produk'}</DialogTitle>
                         <DialogDescription>
-                            {editingProduct ? 'Update product information.' : 'Create a new product in your catalog.'}
+                            {editingProduct ? 'Perbarui informasi produk.' : 'Buat produk baru di katalog Anda.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Product Name *</Label>
+                                <Label htmlFor="name">Nama Produk *</Label>
                                 <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Nike Air Zoom" />
                                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
@@ -268,9 +268,9 @@ export default function ProductsIndex() {
                                 <Input id="size" value={data.size} onChange={(e) => setData('size', e.target.value)} placeholder="e.g. 42" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Category</Label>
+                                <Label>Kategori</Label>
                                 <Select value={data.category_id} onValueChange={(v) => setData('category_id', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                                     <SelectContent>
                                         {categories.map((cat) => (
                                             <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
@@ -279,9 +279,9 @@ export default function ProductsIndex() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Discount</Label>
+                                <Label>Diskon</Label>
                                 <Select value={data.discount_id} onValueChange={(v) => setData('discount_id', v)}>
-                                    <SelectTrigger><SelectValue placeholder="No discount" /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Tanpa diskon" /></SelectTrigger>
                                     <SelectContent>
                                         {discounts.map((disc) => (
                                             <SelectItem key={disc.id} value={disc.id.toString()}>{disc.name}</SelectItem>
@@ -290,23 +290,23 @@ export default function ProductsIndex() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="cost_price">Cost Price *</Label>
+                                <Label htmlFor="cost_price">Harga Modal *</Label>
                                 <Input id="cost_price" type="number" step="0.01" value={data.cost_price} onChange={(e) => setData('cost_price', e.target.value)} placeholder="0" />
                                 {errors.cost_price && <p className="text-xs text-destructive">{errors.cost_price}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="selling_price">Selling Price *</Label>
+                                <Label htmlFor="selling_price">Harga Jual *</Label>
                                 <Input id="selling_price" type="number" step="0.01" value={data.selling_price} onChange={(e) => setData('selling_price', e.target.value)} placeholder="0" />
                                 {errors.selling_price && <p className="text-xs text-destructive">{errors.selling_price}</p>}
                             </div>
                             {!editingProduct && (
                                 <>
                                     <div className="space-y-2">
-                                        <Label htmlFor="stock_quantity">Initial Stock</Label>
+                                        <Label htmlFor="stock_quantity">Stok Awal</Label>
                                         <Input id="stock_quantity" type="number" value={data.stock_quantity} onChange={(e) => setData('stock_quantity', e.target.value)} placeholder="0" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="minimum_quantity">Minimum Stock</Label>
+                                        <Label htmlFor="minimum_quantity">Stok Minimum</Label>
                                         <Input id="minimum_quantity" type="number" value={data.minimum_quantity} onChange={(e) => setData('minimum_quantity', e.target.value)} placeholder="0" />
                                     </div>
                                 </>
@@ -314,19 +314,19 @@ export default function ProductsIndex() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} placeholder="Product description..." rows={3} />
+                            <Label htmlFor="description">Deskripsi</Label>
+                            <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} placeholder="Deskripsi produk..." rows={3} />
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Label htmlFor="status">Active</Label>
+                            <Label htmlFor="status">Aktif</Label>
                             <Switch checked={data.status === 'active'} onCheckedChange={(checked) => setData('status', checked ? 'active' : 'inactive')} />
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
                             <Button type="submit" variant="gradient" disabled={processing}>
-                                {processing ? 'Saving...' : editingProduct ? 'Update' : 'Create'}
+                                {processing ? 'Menyimpan...' : editingProduct ? 'Perbarui' : 'Buat'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -337,14 +337,14 @@ export default function ProductsIndex() {
             <Dialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Delete Product?</DialogTitle>
+                        <DialogTitle>Hapus Produk?</DialogTitle>
                         <DialogDescription>
-                            This action cannot be undone. The product and its stock data will be permanently removed.
+                            Tindakan ini tidak dapat dibatalkan. Produk dan data stoknya akan dihapus secara permanen.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

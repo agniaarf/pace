@@ -44,7 +44,7 @@ export default function ReportsIndex() {
     const { stats, dailyRevenue, topProducts, days } = usePage<PageProps & ReportsPageProps>().props;
 
     const chartData = dailyRevenue.map((d) => ({
-        date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: new Date(d.date).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }),
         revenue: d.revenue,
         count: d.count,
     }));
@@ -56,27 +56,27 @@ export default function ReportsIndex() {
     }));
 
     const cards = [
-        { label: 'Total Revenue', value: formatCurrency(stats.totalRevenue), icon: DollarSign, gradient: 'from-green-500 to-emerald-500' },
-        { label: 'Total Transactions', value: stats.totalTransactions.toString(), icon: Receipt, gradient: 'from-orange-500 to-red-500' },
-        { label: 'Avg Transaction Value', value: formatCurrency(stats.avgTransactionValue), icon: TrendingUp, gradient: 'from-amber-500 to-orange-500' },
-        { label: 'Products Sold', value: topProducts.reduce((sum, p) => sum + p.total_sold, 0).toString(), icon: ShoppingBag, gradient: 'from-violet-500 to-purple-500' },
+        { label: 'Total Pendapatan', value: formatCurrency(stats.totalRevenue), icon: DollarSign, gradient: 'from-green-500 to-emerald-500' },
+        { label: 'Total Transaksi', value: stats.totalTransactions.toString(), icon: Receipt, gradient: 'from-orange-500 to-red-500' },
+        { label: 'Rata-rata Nilai Transaksi', value: formatCurrency(stats.avgTransactionValue), icon: TrendingUp, gradient: 'from-amber-500 to-orange-500' },
+        { label: 'Produk Terjual', value: topProducts.reduce((sum, p) => sum + p.total_sold, 0).toString(), icon: ShoppingBag, gradient: 'from-violet-500 to-purple-500' },
     ];
 
     return (
         <>
-            <Head title="Reports" />
-            <AdminLayout title="Reports" subtitle="Business analytics and insights" activeRoute="/admin/reports">
+            <Head title="Laporan" />
+            <AdminLayout title="Laporan" subtitle="Analisis bisnis dan wawasan" activeRoute="/admin/reports">
                 <div className="space-y-6">
                     {/* Period selector + export */}
                     <div className="flex items-center justify-between">
                         <div className="flex gap-2">
-                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">Last 7 days</Button></Link>
-                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">Last 30 days</Button></Link>
-                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">Last 90 days</Button></Link>
+                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">7 Hari Terakhir</Button></Link>
+                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">30 Hari Terakhir</Button></Link>
+                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">90 Hari Terakhir</Button></Link>
                         </div>
                         <a href={`/admin/reports/export?days=${days}`}>
                             <Button variant="outline" size="sm">
-                                <Download className="h-4 w-4" />Export CSV
+                                <Download className="h-4 w-4" />Ekspor CSV
                             </Button>
                         </a>
                     </div>
@@ -106,7 +106,7 @@ export default function ReportsIndex() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <BarChart3 className="h-5 w-5 text-primary" />
-                                Revenue Trend
+                                Tren Pendapatan
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -123,14 +123,14 @@ export default function ReportsIndex() {
                                         <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#9a6540' }} />
                                         <YAxis tick={{ fontSize: 12, fill: '#9a6540' }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                                         <Tooltip
-                                            formatter={(v: number) => [formatCurrency(v), 'Revenue']}
+                                            formatter={(v) => [formatCurrency(Number(v)), 'Pendapatan']}
                                             contentStyle={{ borderRadius: '12px', border: '1px solid rgba(28,10,0,0.09)', background: '#ffffff' }}
                                         />
                                         <Area type="monotone" dataKey="revenue" stroke="#ea580c" strokeWidth={2} fill="url(#revenueGradient)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <p className="py-12 text-center text-sm text-muted-foreground">No revenue data for this period.</p>
+                                <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada data pendapatan untuk periode ini.</p>
                             )}
                         </CardContent>
                     </Card>
@@ -140,7 +140,7 @@ export default function ReportsIndex() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <ShoppingBag className="h-5 w-5 text-primary" />
-                                Top Selling Products
+                                Produk Terlaris
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -151,14 +151,14 @@ export default function ReportsIndex() {
                                         <XAxis type="number" tick={{ fontSize: 12, fill: '#9a6540' }} />
                                         <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#9a6540' }} width={120} />
                                         <Tooltip
-                                            formatter={(v: number) => [`${v} units`, 'Sold']}
+                                            formatter={(v) => [`${v} unit`, 'Terjual']}
                                             contentStyle={{ borderRadius: '12px', border: '1px solid rgba(28,10,0,0.09)', background: '#ffffff' }}
                                         />
                                         <Bar dataKey="sold" fill="#ea580c" radius={[0, 8, 8, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <p className="py-12 text-center text-sm text-muted-foreground">No product sales data for this period.</p>
+                                <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada data penjualan produk untuk periode ini.</p>
                             )}
                         </CardContent>
                     </Card>

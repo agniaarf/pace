@@ -44,11 +44,11 @@ export default function TransactionShow() {
 
     return (
         <>
-            <Head title={`Transaction ${transaction.transaction_number}`} />
-            <AdminLayout title="Transaction Detail" subtitle={transaction.transaction_number} activeRoute="/admin/transactions">
+            <Head title={`Transaksi ${transaction.transaction_number}`} />
+            <AdminLayout title="Detail Transaksi" subtitle={transaction.transaction_number} activeRoute="/admin/transactions">
                 <div className="space-y-6">
                     <Link href="/admin/transactions">
-                        <Button variant="outline" size="sm"><ArrowLeft className="h-4 w-4" />Back to Transactions</Button>
+                        <Button variant="outline" size="sm"><ArrowLeft className="h-4 w-4" />Kembali ke Transaksi</Button>
                     </Link>
 
                     <div className="grid gap-6 lg:grid-cols-3">
@@ -58,17 +58,17 @@ export default function TransactionShow() {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Receipt className="h-5 w-5 text-primary" />
-                                        Items Purchased
+                                        Item Dibeli
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Product</TableHead>
-                                                <TableHead>Qty</TableHead>
-                                                <TableHead>Unit Price</TableHead>
-                                                <TableHead>Discount</TableHead>
+                                                <TableHead>Produk</TableHead>
+                                                <TableHead>Jumlah</TableHead>
+                                                <TableHead>Harga Satuan</TableHead>
+                                                <TableHead>Diskon</TableHead>
                                                 <TableHead className="text-right">Subtotal</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -96,18 +96,18 @@ export default function TransactionShow() {
                         {/* Summary */}
                         <div className="space-y-4">
                             <Card>
-                                <CardHeader><CardTitle>Payment Summary</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Ringkasan Pembayaran</CardTitle></CardHeader>
                                 <CardContent className="space-y-3">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Subtotal</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.subtotal))}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Discount</span>
+                                        <span className="text-muted-foreground">Diskon</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.discount_amount))}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Tax</span>
+                                        <span className="text-muted-foreground">Pajak</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.tax_amount))}</span>
                                     </div>
                                     <div className="border-t border-border pt-3 flex justify-between">
@@ -115,42 +115,42 @@ export default function TransactionShow() {
                                         <span className="font-bold text-primary text-lg">{formatCurrency(Number(transaction.total_amount))}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Amount Paid</span>
+                                        <span className="text-muted-foreground">Jumlah Dibayar</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.amount_paid))}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Change</span>
+                                        <span className="text-muted-foreground">Kembalian</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.change_amount))}</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             <Card>
-                                <CardHeader><CardTitle>Transaction Info</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Info Transaksi</CardTitle></CardHeader>
                                 <CardContent className="space-y-3 text-sm">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Status</span>
                                         <Badge variant={transaction.status === 'completed' ? 'success' : 'warning'} className="capitalize">{transaction.status}</Badge>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Date</span>
-                                        <span>{new Date(transaction.transaction_date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                        <span className="text-muted-foreground">Tanggal</span>
+                                        <span>{new Date(transaction.transaction_date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Cashier</span>
+                                        <span className="text-muted-foreground">Kasir</span>
                                         <span>{transaction.cashier?.username ?? '—'}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Customer</span>
-                                        <span>{transaction.customer?.full_name ?? 'Walk-in'}</span>
+                                        <span className="text-muted-foreground">Pelanggan</span>
+                                        <span>{transaction.customer?.full_name ?? 'Umum'}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Payment</span>
+                                        <span className="text-muted-foreground">Pembayaran</span>
                                         <span>{transaction.paymentMethod?.label ?? '—'}</span>
                                     </div>
                                     {transaction.notes && (
                                         <div className="pt-2 border-t border-border">
-                                            <span className="text-muted-foreground">Notes: </span>
+                                            <span className="text-muted-foreground">Catatan: </span>
                                             <span>{transaction.notes}</span>
                                         </div>
                                     )}

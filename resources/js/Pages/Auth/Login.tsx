@@ -25,7 +25,7 @@ export default function Login() {
 
     return (
         <>
-            <Head title="Sign In" />
+            <Head title="Masuk" />
 
             <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
                 {/* Ambient gradient blobs */}
@@ -53,9 +53,9 @@ export default function Login() {
                     {/* Login card */}
                     <div className="rounded-2xl border border-border bg-card/80 p-8 shadow-elevated backdrop-blur-xl">
                         <div className="mb-6">
-                            <h2 className="text-xl font-bold">Welcome back</h2>
+                            <h2 className="text-xl font-bold">Selamat datang kembali</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Sign in to your account to continue
+                                Masuk ke akun Anda untuk melanjutkan
                             </p>
                         </div>
 
@@ -76,7 +76,7 @@ export default function Login() {
                                         value={data.username}
                                         onChange={(e) => setData('username', e.target.value)}
                                         className="pl-10"
-                                        placeholder="Enter your username"
+                                        placeholder="Masukkan username Anda"
                                         autoFocus
                                         autoComplete="username"
                                     />
@@ -98,7 +98,7 @@ export default function Login() {
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
                                         className="pl-10 pr-10"
-                                        placeholder="Enter your password"
+                                        placeholder="Masukkan password Anda"
                                         autoComplete="current-password"
                                     />
                                     <button
@@ -127,7 +127,7 @@ export default function Login() {
                                     onChange={(e) => setData('remember', e.target.checked)}
                                     className="h-4 w-4 rounded border-input accent-primary"
                                 />
-                                Remember me
+                                Ingat saya
                             </label>
 
                             <Button
@@ -137,20 +137,20 @@ export default function Login() {
                                 className="w-full"
                                 disabled={processing}
                             >
-                                {processing ? 'Signing in...' : 'Sign In'}
+                                {processing ? 'Masuk...' : 'Masuk'}
                             </Button>
                         </form>
 
                         {/* Demo credentials hint */}
                         <div className="mt-6 rounded-lg border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
-                            <p className="font-semibold text-foreground">Demo accounts:</p>
+                            <p className="font-semibold text-foreground">Akun demo:</p>
                             <p className="mt-1">Admin: <span className="font-mono">admin / password</span></p>
                             <p>Kasir: <span className="font-mono">kasir / password</span></p>
                         </div>
                     </div>
 
                     <p className="mt-6 text-center text-xs text-muted-foreground">
-                        &copy; {new Date().getFullYear()} {app.name}. All rights reserved.
+                        &copy; {new Date().getFullYear()} {app.name}. Hak cipta dilindungi.
                     </p>
                 </div>
             </div>

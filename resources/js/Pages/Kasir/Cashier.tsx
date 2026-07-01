@@ -202,17 +202,17 @@ export default function Cashier() {
         post('/kasir/cashier', {
             onSuccess: (page) => {
                 const flash = (page.props.flash as { success?: string });
-                setTxResult({ number: flash.success ?? 'Transaction completed', total: totalAmount, change: Math.max(0, change) });
+                setTxResult({ number: flash.success ?? 'Transaksi selesai', total: totalAmount, change: Math.max(0, change) });
                 setCheckoutStep('success');
                 setCart([]);
                 setSelectedCustomer(null);
                 setCashInput('');
                 setPaymentMethodId(null);
                 reset();
-                toast('Transaction completed successfully!', 'success');
+                toast('Transaksi berhasil diselesaikan!', 'success');
             },
             onError: () => {
-                toast('Failed to process transaction. Please try again.', 'error');
+                toast('Gagal memproses transaksi. Silakan coba lagi.', 'error');
             },
         });
     };
@@ -221,8 +221,8 @@ export default function Cashier() {
 
     return (
         <>
-            <Head title="Cashier" />
-            <KasirLayout title="Cashier" subtitle="Process a new transaction" activeRoute="/kasir/cashier">
+            <Head title="Kasir" />
+            <KasirLayout title="Kasir" subtitle="Proses transaksi baru" activeRoute="/kasir/cashier">
                 {flash.error && (
                     <div className="animate-fade-in mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
                         {flash.error}
@@ -235,7 +235,7 @@ export default function Cashier() {
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search products or scan barcode..."
+                                placeholder="Cari produk atau pindai barcode..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="pl-10"
@@ -279,7 +279,7 @@ export default function Cashier() {
                                             {inCart ? (
                                                 <Badge variant="default">{inCart.quantity}x</Badge>
                                             ) : (
-                                                <span className="flex-shrink-0 text-xs text-muted-foreground">Stock {p.stock}</span>
+                                                <span className="flex-shrink-0 text-xs text-muted-foreground">Stok {p.stock}</span>
                                             )}
                                         </div>
                                     </button>
@@ -288,7 +288,7 @@ export default function Cashier() {
                             {filteredProducts.length === 0 && (
                                 <div className="col-span-2 flex flex-col items-center justify-center py-12 text-muted-foreground sm:col-span-3 xl:col-span-4">
                                     <Package className="mb-3 h-10 w-10 opacity-40" />
-                                    <p className="text-sm">No products found.</p>
+                                    <p className="text-sm">Produk tidak ditemukan.</p>
                                 </div>
                             )}
                         </div>
@@ -299,9 +299,9 @@ export default function Cashier() {
                         {/* Customer */}
                         <div className="border-b border-border px-4 py-3">
                             <div className="mb-2 flex items-center justify-between">
-                                <span className="text-xs font-semibold text-foreground">Customer</span>
+                                <span className="text-xs font-semibold text-foreground">Pelanggan</span>
                                 <button onClick={() => setShowCustomerModal(true)} className="text-xs font-semibold text-primary hover:underline">
-                                    {selectedCustomer ? 'Change' : 'Select Member'}
+                                    {selectedCustomer ? 'Ganti' : 'Pilih Member'}
                                 </button>
                             </div>
                             {selectedCustomer ? (
@@ -322,20 +322,20 @@ export default function Cashier() {
                                     <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
                                         <Users className="h-3 w-3 text-muted-foreground" />
                                     </div>
-                                    <span className="text-xs text-muted-foreground">Walk-in customer (non-member)</span>
+                                    <span className="text-xs text-muted-foreground">Pelanggan umum (non-member)</span>
                                 </div>
                             )}
                         </div>
 
                         {/* Cart items */}
                         <div className="border-b border-border px-5 py-3">
-                            <h3 className="text-sm font-bold text-foreground">Cart ({cart.length})</h3>
+                            <h3 className="text-sm font-bold text-foreground">Keranjang ({cart.length})</h3>
                         </div>
                         <div className="flex-1 space-y-2 overflow-y-auto p-4">
                             {cart.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                                     <ShoppingCart className="mb-3 h-8 w-8 opacity-40" />
-                                    <p className="text-xs">Cart is empty. Add products from the left.</p>
+                                    <p className="text-xs">Keranjang kosong. Tambahkan produk dari sebelah kiri.</p>
                                 </div>
                             )}
                             {cart.map(item => (
@@ -380,7 +380,7 @@ export default function Cashier() {
                                     </div>
                                 ))}
                                 <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>Tax (11%)</span>
+                                    <span>Pajak (11%)</span>
                                     <span className="font-mono">{formatCurrency(taxAmount)}</span>
                                 </div>
                                 <div className="flex justify-between border-t border-border pt-1 text-sm font-bold">
@@ -391,7 +391,7 @@ export default function Cashier() {
                             {appliedDiscounts.length > 0 && (
                                 <div className="flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700">
                                     <CheckCircle className="h-3 w-3" />
-                                    {appliedDiscounts.length} discount(s) active — save {formatCurrency(totalDiscount)}
+                                    {appliedDiscounts.length} diskon aktif — hemat {formatCurrency(totalDiscount)}
                                 </div>
                             )}
                             <Button
@@ -407,7 +407,7 @@ export default function Cashier() {
                                         <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
                                     </span>
                                 )}
-                                Proceed to Payment
+                                Lanjut ke Pembayaran
                             </Button>
                         </div>
                     </div>
@@ -418,12 +418,12 @@ export default function Cashier() {
             <Dialog open={showCustomerModal} onOpenChange={setShowCustomerModal}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Select Customer</DialogTitle>
+                        <DialogTitle>Pilih Pelanggan</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input placeholder="Search name, phone, or member code..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} className="pl-10" />
+                            <Input placeholder="Cari nama, telepon, atau kode member..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} className="pl-10" />
                         </div>
                         <div className="max-h-56 space-y-2 overflow-y-auto">
                             {filteredCustomers.map(c => (
@@ -442,11 +442,11 @@ export default function Cashier() {
                                 </button>
                             ))}
                             {customerSearch && filteredCustomers.length === 0 && (
-                                <p className="py-4 text-center text-sm text-muted-foreground">No customers found.</p>
+                                <p className="py-4 text-center text-sm text-muted-foreground">Pelanggan tidak ditemukan.</p>
                             )}
                         </div>
                         <Button variant="outline" className="w-full justify-center" onClick={() => { setSelectedCustomer(null); setShowCustomerModal(false); setCustomerSearch(''); }}>
-                            Continue as Walk-in
+                            Lanjut sebagai Umum
                         </Button>
                     </div>
                 </DialogContent>
@@ -456,13 +456,13 @@ export default function Cashier() {
             <Dialog open={checkoutStep === 'payment'} onOpenChange={(open) => { if (!open) setCheckoutStep(null); }}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Payment</DialogTitle>
+                        <DialogTitle>Pembayaran</DialogTitle>
                     </DialogHeader>
                     <ProgressStepper
                         steps={[
-                            { label: 'Cart' },
-                            { label: 'Payment' },
-                            { label: 'Done' },
+                            { label: 'Keranjang' },
+                            { label: 'Pembayaran' },
+                            { label: 'Selesai' },
                         ]}
                         currentStep={1}
                         className="mb-4"
@@ -481,16 +481,16 @@ export default function Cashier() {
                             <div className="space-y-1 border-t border-border pt-2">
                                 <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
                                 {totalDiscount > 0 && (
-                                    <div className="flex justify-between text-xs text-emerald-600"><span>Discounts</span><span className="font-mono">−{formatCurrency(totalDiscount)}</span></div>
+                                    <div className="flex justify-between text-xs text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(totalDiscount)}</span></div>
                                 )}
-                                <div className="flex justify-between text-xs text-muted-foreground"><span>Tax (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
+                                <div className="flex justify-between text-xs text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
                                 <div className="flex justify-between pt-1 text-base font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(totalAmount)}</span></div>
                             </div>
                         </div>
 
                         {/* Payment methods */}
                         <div>
-                            <p className="mb-2 text-sm font-semibold">Payment Method</p>
+                            <p className="mb-2 text-sm font-semibold">Metode Pembayaran</p>
                             <div className="grid grid-cols-2 gap-2">
                                 {paymentMethods.map(m => {
                                     const Icon = PAYMENT_ICONS[m.code] ?? Banknote;
@@ -516,11 +516,11 @@ export default function Cashier() {
                         {paymentMethodId && (
                             <div className="animate-fade-in space-y-3">
                                 <div>
-                                    <p className="mb-1.5 text-xs font-semibold">Amount Received</p>
+                                    <p className="mb-1.5 text-xs font-semibold">Jumlah Diterima</p>
                                     <Input
                                         type="text"
                                         placeholder="Rp 0"
-                                        value={cashInput ? `Rp ${parseInt(cashInput.replace(/\D/g, '')).toLocaleString('en-US')}` : ''}
+                                        value={cashInput ? `Rp ${parseInt(cashInput.replace(/\D/g, '')).toLocaleString('id-ID')}` : ''}
                                         onChange={e => setCashInput(e.target.value.replace(/\D/g, ''))}
                                         className="font-mono text-xl font-bold"
                                     />
@@ -538,9 +538,9 @@ export default function Cashier() {
                                 </div>
                                 {cashAmount > 0 && (
                                     <div className={`rounded-xl p-3 ${change >= 0 ? 'border border-emerald-200 bg-emerald-50' : 'border border-red-200 bg-red-50'}`}>
-                                        <p className="mb-0.5 text-xs font-semibold text-muted-foreground">Change</p>
+                                        <p className="mb-0.5 text-xs font-semibold text-muted-foreground">Kembalian</p>
                                         <p className={`font-mono text-xl font-bold ${change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {change >= 0 ? formatCurrency(change) : `Short ${formatCurrency(Math.abs(change))}`}
+                                            {change >= 0 ? formatCurrency(change) : `Kurang ${formatCurrency(Math.abs(change))}`}
                                         </p>
                                     </div>
                                 )}
@@ -549,7 +549,7 @@ export default function Cashier() {
 
                         <div className="flex gap-3">
                             <Button variant="outline" onClick={() => setCheckoutStep(null)}>
-                                <ArrowLeft className="h-4 w-4" />Back
+                                <ArrowLeft className="h-4 w-4" />Kembali
                             </Button>
                             <Button
                                 variant="gradient"
@@ -558,8 +558,8 @@ export default function Cashier() {
                                 onClick={handleCheckout}
                             >
                                 {processing ? (
-                                    <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
-                                ) : 'Complete Transaction'}
+                                    <><Loader2 className="h-4 w-4 animate-spin" />Memproses...</>
+                                ) : 'Selesaikan Transaksi'}
                             </Button>
                         </div>
                     </div>
@@ -573,30 +573,30 @@ export default function Cashier() {
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 animate-scale-in">
                             <CheckCircle className="h-8 w-8 text-emerald-500" />
                         </div>
-                        <h2 className="mb-1 text-xl font-bold">Transaction Successful!</h2>
+                        <h2 className="mb-1 text-xl font-bold">Transaksi Berhasil!</h2>
                         <p className="mb-1 text-sm text-muted-foreground">{txResult?.number}</p>
                         <p className="mb-6 text-sm text-muted-foreground">
                             Total: <b className="text-foreground">{txResult && formatCurrency(txResult.total)}</b>
-                            {txResult && txResult.change > 0 && ` — Change: ${formatCurrency(txResult.change)}`}
+                            {txResult && txResult.change > 0 && ` — Kembalian: ${formatCurrency(txResult.change)}`}
                         </p>
 
                         {/* Receipt preview */}
                         <div className="mb-6 w-full rounded-xl border border-border bg-card p-4 text-left">
                             <div className="mb-3 border-b border-dashed border-border pb-2 text-center text-xs font-semibold text-muted-foreground">
-                                PACE POS RECEIPT
+                                STRUK PACE POS
                             </div>
                             <div className="space-y-1">
                                 {cart.length === 0 && txResult && (
-                                    <p className="text-center text-xs text-muted-foreground">Items have been cleared.</p>
+                                    <p className="text-center text-xs text-muted-foreground">Item telah dikosongkan.</p>
                                 )}
                             </div>
                             <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">
-                                Thank you for shopping! 🛍️
+                                Terima kasih telah berbelanja! 🛍️
                             </div>
                         </div>
 
                         <Button variant="gradient" className="w-full justify-center" onClick={() => { setCheckoutStep(null); setTxResult(null); }}>
-                            <Check className="h-4 w-4" />New Transaction
+                            <Check className="h-4 w-4" />Transaksi Baru
                         </Button>
                     </div>
                 </DialogContent>
