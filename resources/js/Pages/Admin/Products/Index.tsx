@@ -58,7 +58,8 @@ export default function ProductsIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-    const { data, setData, post, put, processing, errors, reset } = useForm<{
+    const { data, setData, post, processing, errors, reset } = useForm<{
+        _method: string;
         category_id: string;
         name: string;
         sku: string;
@@ -72,6 +73,7 @@ export default function ProductsIndex() {
         stock_quantity: string;
         minimum_quantity: string;
     }>({
+        _method: 'POST',
         category_id: '',
         name: '',
         sku: '',
@@ -90,6 +92,7 @@ export default function ProductsIndex() {
     const openCreate = () => {
         setEditingProduct(null);
         reset();
+        setData('_method', 'POST');
         setPhotoPreview(null);
         setDialogOpen(true);
     };
@@ -97,6 +100,7 @@ export default function ProductsIndex() {
     const openEdit = (product: Product) => {
         setEditingProduct(product);
         setData({
+            _method: 'PUT',
             category_id: product.category_id?.toString() ?? '',
             name: product.name,
             sku: product.sku ?? '',
@@ -117,13 +121,15 @@ export default function ProductsIndex() {
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         if (editingProduct) {
-            put(`/admin/products/${editingProduct.id}`, {
+            post(`/admin/products/${editingProduct.id}`, {
                 forceFormData: true,
+                preserveScroll: true,
                 onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
             });
         } else {
             post('/admin/products', {
                 forceFormData: true,
+                preserveScroll: true,
                 onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
             });
         }
