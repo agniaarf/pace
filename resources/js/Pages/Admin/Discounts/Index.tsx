@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { DataTable, type Column } from '@/Components/DataTable';
+import { DatePicker } from '@/Components/ui/calendar';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Check, Edit, Percent, Plus, Search, Trash2, X } from 'lucide-react';
@@ -278,12 +279,20 @@ export default function DiscountsIndex() {
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="start_date">Tanggal Mulai</Label>
-                                <Input id="start_date" type="date" value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} />
+                                <Label>Tanggal Mulai</Label>
+                                <DatePicker
+                                    value={data.start_date}
+                                    onChange={(v) => setData('start_date', v)}
+                                    placeholder="Pilih tanggal mulai"
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="end_date">Tanggal Berakhir</Label>
-                                <Input id="end_date" type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} />
+                                <Label>Tanggal Berakhir</Label>
+                                <DatePicker
+                                    value={data.end_date}
+                                    onChange={(v) => setData('end_date', v)}
+                                    placeholder="Pilih tanggal berakhir"
+                                />
                             </div>
                         </div>
                         <div className="space-y-2">
