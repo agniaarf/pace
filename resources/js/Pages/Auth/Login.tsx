@@ -38,19 +38,13 @@ export default function Login() {
                 <div className="relative z-10 w-full max-w-md">
                     {/* Brand header */}
                     <div className="mb-8 text-center">
-                        <div className="mb-4 inline-flex items-center justify-center">
+                        <div className="inline-flex items-center justify-center">
                             <img
                                 src="/images/pace-logo.png"
                                 alt="PACE"
-                                className="h-16 w-16 rounded-2xl object-cover shadow-glow ring-2 ring-border animate-float"
+                                className="h-20 w-auto object-contain animate-float"
                             />
                         </div>
-                        <h1 className="text-3xl font-extrabold tracking-tight">
-                            {app.name}
-                        </h1>
-                        <p className="mt-1.5 text-sm text-muted-foreground">
-                            {app.slogan}
-                        </p>
                     </div>
 
                     {/* Login card */}

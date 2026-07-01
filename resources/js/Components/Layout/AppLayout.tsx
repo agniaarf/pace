@@ -29,7 +29,7 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, navItems, activeRoute, title, subtitle }: AppLayoutProps) {
-    const { auth, app } = usePage<PageProps>().props;
+    const { auth } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const user = auth.user as AuthUser;
 
@@ -51,21 +51,11 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
             >
                 {/* Logo area */}
                 <div className="flex items-center justify-between px-5 py-5">
-                    <div className="flex items-center gap-3">
-                        <img
-                            src="/images/pace-logo.png"
-                            alt="PACE"
-                            className="h-10 w-10 rounded-xl object-cover ring-1 ring-sidebar-border"
-                        />
-                        <div>
-                            <p className="text-base font-extrabold text-sidebar-foreground">
-                                {app.name}
-                            </p>
-                            <p className="text-[10px] text-sidebar-foreground/50">
-                                {app.slogan}
-                            </p>
-                        </div>
-                    </div>
+                    <img
+                        src="/images/pace-logo.png"
+                        alt="PACE"
+                        className="h-12 w-auto object-contain"
+                    />
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="text-sidebar-foreground/60 lg:hidden"
