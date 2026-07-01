@@ -385,12 +385,12 @@ export default function ProductsIndex() {
                                     <input
                                         id="photo"
                                         type="file"
-                                        accept="image/jpeg,image/png,image/webp"
+                                        accept="image/jpeg,image/png"
                                         onChange={handlePhotoChange}
                                         className="hidden"
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        Format: JPG, PNG, WebP. Maksimal 2MB.
+                                        Format: JPG, PNG. Maksimal 2MB.
                                         {editingProduct?.photo && !data.photo && ' Kosongkan jika tidak ingin mengubah foto.'}
                                     </p>
                                     {errors.photo && <p className="text-xs text-destructive">{errors.photo}</p>}
