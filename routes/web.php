@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Kasir\CashierController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -69,4 +70,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 // Kasir routes
 Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'kasirDashboard'])->name('kasir.dashboard');
+    Route::get('/cashier', [CashierController::class, 'index'])->name('kasir.cashier');
+    Route::post('/cashier', [CashierController::class, 'store'])->name('kasir.cashier.store');
 });

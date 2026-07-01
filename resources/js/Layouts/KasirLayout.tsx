@@ -4,7 +4,7 @@ import { LayoutDashboard, ShoppingCart, Users } from 'lucide-react';
 const kasirNavItems: NavItem[] = [
     { label: 'Dashboard', href: '/kasir/dashboard', icon: LayoutDashboard },
     { label: 'Cashier', href: '/kasir/cashier', icon: ShoppingCart, permission: 'transactions.create' },
-    { label: 'Customers', href: '/kasir/customers', icon: Users, permission: 'customers.view' },
+    { label: 'Customers', href: '/kasir/customers', icon: Users, permission: 'customers.read' },
 ];
 
 interface KasirLayoutProps {
