@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { BarChart3, DollarSign, Receipt, ShoppingBag, TrendingUp } from 'lucide-react';
+import { BarChart3, Download, DollarSign, Receipt, ShoppingBag, TrendingUp } from 'lucide-react';
 import {
     Area,
     AreaChart,
@@ -67,11 +67,18 @@ export default function ReportsIndex() {
             <Head title="Reports" />
             <AdminLayout title="Reports" subtitle="Business analytics and insights" activeRoute="/admin/reports">
                 <div className="space-y-6">
-                    {/* Period selector */}
-                    <div className="flex gap-2">
-                        <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">Last 7 days</Button></Link>
-                        <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">Last 30 days</Button></Link>
-                        <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">Last 90 days</Button></Link>
+                    {/* Period selector + export */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">Last 7 days</Button></Link>
+                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">Last 30 days</Button></Link>
+                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">Last 90 days</Button></Link>
+                        </div>
+                        <a href={`/admin/reports/export?days=${days}`}>
+                            <Button variant="outline" size="sm">
+                                <Download className="h-4 w-4" />Export CSV
+                            </Button>
+                        </a>
                     </div>
 
                     {/* Stat cards */}

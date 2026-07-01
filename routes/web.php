@@ -57,6 +57,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     // Stock
     Route::get('/stock', [StockController::class, 'index'])->name('admin.stock.index');
+    Route::get('/stock/alerts', [StockController::class, 'alerts'])->name('admin.stock.alerts');
     Route::post('/stock/{stock}/adjust', [StockController::class, 'adjust']);
 
     // Transactions
@@ -65,6 +66,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
 });
 
 // Kasir routes

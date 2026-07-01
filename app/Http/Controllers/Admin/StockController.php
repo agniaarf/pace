@@ -33,6 +33,41 @@ class StockController extends Controller
         ]);
     }
 
+    public function alerts(): Response
+    {
+        $lowStock = Stock::with('product.category')
+            ->whereColumn('quantity', '<=', 'minimum_quantity')
+            ->where('quantity', '>', 0)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'product_name' => $s->product->name,
+                'sku' => $s->product->sku,
+                'category' => $s->product->category?->name,
+                'quantity' => $s->quantity,
+                'minimum_quantity' => $s->minimum_quantity,
+                'status' => 'low',
+            ]);
+
+        $outOfStock = Stock::with('product.category')
+            ->where('quantity', '<=', 0)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'product_name' => $s->product->name,
+                'sku' => $s->product->sku,
+                'category' => $s->product->category?->name,
+                'quantity' => $s->quantity,
+                'minimum_quantity' => $s->minimum_quantity,
+                'status' => 'out',
+            ]);
+
+        return Inertia::render('Admin/Stock/Alerts', [
+            'lowStock' => $lowStock,
+            'outOfStock' => $outOfStock,
+        ]);
+    }
+
     public function adjust(Request $request, Stock $stock): RedirectResponse
     {
         $validated = $request->validate([

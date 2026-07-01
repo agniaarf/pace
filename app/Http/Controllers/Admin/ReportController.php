@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
-use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
@@ -61,5 +62,45 @@ class ReportController extends Controller
             'topProducts' => $topProducts,
             'days' => $days,
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $days = (int) $request->get('days', 30);
+
+        $transactions = Transaction::with(['cashier', 'customer', 'items.product'])
+            ->where('status', 'completed')
+            ->whereDate('transaction_date', '>=', now()->subDays($days))
+            ->orderByDesc('transaction_date')
+            ->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="pace-report-' . now()->format('Y-m-d') . '.csv"',
+        ];
+
+        $callback = function () use ($transactions) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Transaction Number', 'Date', 'Cashier', 'Customer', 'Items', 'Subtotal', 'Discount', 'Tax', 'Total', 'Payment Method']);
+
+            foreach ($transactions as $tx) {
+                fputcsv($handle, [
+                    $tx->transaction_number,
+                    $tx->transaction_date,
+                    $tx->cashier?->username ?? 'Unknown',
+                    $tx->customer?->full_name ?? 'Walk-in',
+                    $tx->items->count(),
+                    $tx->subtotal,
+                    $tx->discount_amount,
+                    $tx->tax_amount,
+                    $tx->total_amount,
+                    $tx->paymentMethod?->label ?? 'N/A',
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
