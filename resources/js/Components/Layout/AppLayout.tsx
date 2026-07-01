@@ -70,7 +70,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                         const Icon = item.icon;
                         const isActive = activeRoute === item.href;
                         return (
-                            <a
+                            <Link
                                 key={item.href}
                                 href={item.href}
                                 className={`group flex animate-fade-in-up items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
@@ -82,7 +82,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                             >
                                 <Icon className="h-5 w-5 shrink-0" />
                                 {item.label}
-                            </a>
+                            </Link>
                         );
                     })}
                 </nav>
