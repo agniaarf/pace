@@ -76,18 +76,19 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
 
                 {/* Nav */}
                 <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-                    {navItems.map((item) => {
+                    {navItems.map((item, idx) => {
                         const Icon = item.icon;
                         const isActive = activeRoute === item.href;
                         return (
                             <a
                                 key={item.href}
                                 href={item.href}
-                                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                className={`group flex animate-fade-in-up items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                                     isActive
                                         ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
                                         : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                                 }`}
+                                style={{ animationDelay: `${idx * 50}ms` }}
                             >
                                 <Icon className="h-5 w-5 shrink-0" />
                                 {item.label}
@@ -164,7 +165,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                 </header>
 
                 {/* Page content */}
-                <main className="flex-1 p-4 lg:p-8">{children}</main>
+                <main className="flex-1 animate-fade-in p-4 lg:p-8">{children}</main>
             </div>
         </div>
     );

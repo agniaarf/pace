@@ -7,6 +7,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/Components/ui/dialog';
+import { ProgressStepper } from '@/Components/ui/progress-stepper';
+import { useToast } from '@/Components/ui/toast';
 import KasirLayout from '@/Layouts/KasirLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import {
@@ -15,6 +17,7 @@ import {
     Check,
     CheckCircle,
     CreditCard,
+    Loader2,
     Minus,
     Package,
     Plus,
@@ -86,6 +89,7 @@ const PAYMENT_ICONS: Record<string, typeof Banknote> = {
 
 export default function Cashier() {
     const { products, customers, paymentMethods, activeDiscounts, flash } = usePage<PageProps & CashierPageProps>().props;
+    const { toast } = useToast();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<CashierCustomer | null>(null);
@@ -205,6 +209,10 @@ export default function Cashier() {
                 setCashInput('');
                 setPaymentMethodId(null);
                 reset();
+                toast('Transaction completed successfully!', 'success');
+            },
+            onError: () => {
+                toast('Failed to process transaction. Please try again.', 'error');
             },
         });
     };
@@ -216,14 +224,14 @@ export default function Cashier() {
             <Head title="Cashier" />
             <KasirLayout title="Cashier" subtitle="Process a new transaction" activeRoute="/kasir/cashier">
                 {flash.error && (
-                    <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                    <div className="animate-fade-in mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
                         {flash.error}
                     </div>
                 )}
 
-                <div className="flex h-[calc(100vh-140px)] gap-4 overflow-hidden">
+                <div className="flex h-[calc(100vh-140px)] flex-col gap-4 overflow-hidden lg:flex-row">
                     {/* Product grid */}
-                    <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4">
+                    <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4 animate-fade-in">
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -233,7 +241,7 @@ export default function Cashier() {
                                 className="pl-10"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                             {filteredProducts.map(p => {
                                 const inCart = cart.find(i => i.product.id === p.id);
                                 const hasDiscount = !!getProductDiscount(p);
@@ -278,7 +286,7 @@ export default function Cashier() {
                                 );
                             })}
                             {filteredProducts.length === 0 && (
-                                <div className="col-span-3 flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                <div className="col-span-2 flex flex-col items-center justify-center py-12 text-muted-foreground sm:col-span-3 xl:col-span-4">
                                     <Package className="mb-3 h-10 w-10 opacity-40" />
                                     <p className="text-sm">No products found.</p>
                                 </div>
@@ -287,7 +295,7 @@ export default function Cashier() {
                     </div>
 
                     {/* Cart sidebar */}
-                    <div className="flex w-80 flex-shrink-0 flex-col rounded-xl border border-border bg-card">
+                    <div className="flex w-full flex-shrink-0 flex-col rounded-xl border border-border bg-card lg:w-80 animate-fade-in">
                         {/* Customer */}
                         <div className="border-b border-border px-4 py-3">
                             <div className="mb-2 flex items-center justify-between">
@@ -331,7 +339,7 @@ export default function Cashier() {
                                 </div>
                             )}
                             {cart.map(item => (
-                                <div key={item.product.id} className="rounded-xl border border-border bg-background p-3">
+                                <div key={item.product.id} className="animate-scale-in rounded-xl border border-border bg-background p-3">
                                     <div className="mb-2 flex items-start justify-between gap-2">
                                         <div className="text-xs font-semibold leading-tight text-foreground">{item.product.name}</div>
                                         <button onClick={() => removeFromCart(item.product.id)} className="flex-shrink-0 text-muted-foreground hover:text-destructive">
@@ -393,6 +401,12 @@ export default function Cashier() {
                                 disabled={cart.length === 0}
                                 onClick={() => setCheckoutStep('payment')}
                             >
+                                {cart.length > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                                        <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                                    </span>
+                                )}
                                 Proceed to Payment
                             </Button>
                         </div>
@@ -444,6 +458,15 @@ export default function Cashier() {
                     <DialogHeader>
                         <DialogTitle>Payment</DialogTitle>
                     </DialogHeader>
+                    <ProgressStepper
+                        steps={[
+                            { label: 'Cart' },
+                            { label: 'Payment' },
+                            { label: 'Done' },
+                        ]}
+                        currentStep={1}
+                        className="mb-4"
+                    />
                     <div className="space-y-4">
                         {/* Order summary */}
                         <div className="rounded-xl border border-border bg-muted/30 p-4">
@@ -491,7 +514,7 @@ export default function Cashier() {
 
                         {/* Cash input */}
                         {paymentMethodId && (
-                            <div className="space-y-3">
+                            <div className="animate-fade-in space-y-3">
                                 <div>
                                     <p className="mb-1.5 text-xs font-semibold">Amount Received</p>
                                     <Input
@@ -534,7 +557,9 @@ export default function Cashier() {
                                 disabled={!paymentMethodId || (cashAmount < totalAmount && cashAmount > 0) || processing}
                                 onClick={handleCheckout}
                             >
-                                {processing ? 'Processing...' : 'Complete Transaction'}
+                                {processing ? (
+                                    <><Loader2 className="h-4 w-4 animate-spin" />Processing...</>
+                                ) : 'Complete Transaction'}
                             </Button>
                         </div>
                     </div>
@@ -545,7 +570,7 @@ export default function Cashier() {
             <Dialog open={checkoutStep === 'success'} onOpenChange={(open) => { if (!open) { setCheckoutStep(null); setTxResult(null); } }}>
                 <DialogContent className="sm:max-w-sm">
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 animate-scale-in">
                             <CheckCircle className="h-8 w-8 text-emerald-500" />
                         </div>
                         <h2 className="mb-1 text-xl font-bold">Transaction Successful!</h2>

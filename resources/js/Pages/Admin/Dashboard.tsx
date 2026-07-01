@@ -68,10 +68,10 @@ export default function Dashboard() {
                 <div className="space-y-6">
                     {/* Stat cards */}
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {cards.map((card) => {
+                        {cards.map((card, idx) => {
                             const Icon = card.icon;
                             return (
-                                <Card key={card.label} className="overflow-hidden transition hover:shadow-elevated">
+                                <Card key={card.label} className="animate-fade-in-up overflow-hidden transition hover:shadow-elevated" style={{ animationDelay: `${idx * 80}ms` }}>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                                         <CardTitle className="text-sm font-semibold text-muted-foreground">
                                             {card.label}
