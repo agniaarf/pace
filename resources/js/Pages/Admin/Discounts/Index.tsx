@@ -17,11 +17,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/Components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
-import { Pagination } from '@/Components/Pagination';
+import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Edit, Percent, Plus, Search, Trash2 } from 'lucide-react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { Edit, Percent, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PaginatedResponse, PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
@@ -40,7 +39,7 @@ interface Discount {
 
 interface DiscountsPageProps {
     discounts: PaginatedResponse<Discount>;
-    filters: { search?: string; status?: string };
+    filters: { search?: string; status?: string; per_page?: string };
 }
 
 export default function DiscountsIndex() {
@@ -48,7 +47,6 @@ export default function DiscountsIndex() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<Discount | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [search, setSearch] = useState(filters.search ?? '');
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
@@ -94,74 +92,82 @@ export default function DiscountsIndex() {
         return formatCurrency(Number(d.value));
     };
 
+    const columns: Column<Discount>[] = [
+        {
+            key: 'name',
+            header: 'Name',
+            render: (d) => <span className="font-medium">{d.name}</span>,
+        },
+        {
+            key: 'type',
+            header: 'Type',
+            render: (d) => <span className="capitalize">{d.type}</span>,
+        },
+        {
+            key: 'value',
+            header: 'Value',
+            render: (d) => <span className="font-semibold text-primary">{formatDiscountValue(d)}</span>,
+        },
+        {
+            key: 'applies_to',
+            header: 'Applies To',
+            render: (d) => <span className="capitalize">{d.applies_to}</span>,
+        },
+        {
+            key: 'period',
+            header: 'Period',
+            render: (d) => (
+                <span className="text-xs text-muted-foreground">
+                    {d.start_date ? `${d.start_date} → ${d.end_date ?? '—'}` : 'No limit'}
+                </span>
+            ),
+        },
+        {
+            key: 'products_count',
+            header: 'Products',
+            render: (d) => <Badge variant="secondary">{d.products_count}</Badge>,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (d) => <Badge variant={d.status === 'active' ? 'success' : 'outline'}>{d.status}</Badge>,
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            render: (d) => (
+                <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <>
             <Head title="Discounts" />
             <AdminLayout title="Discounts" subtitle="Manage promotional discounts" activeRoute="/admin/discounts">
                 <div className="space-y-6">
-                    {flash.success && <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
-                    {flash.error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
+                    {flash.success && <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
+                    {flash.error && <div className="animate-fade-in rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
 
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input placeholder="Search discounts..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
-                                onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/discounts?search=${encodeURIComponent(search)}`; }} />
-                        </div>
-                        <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Discount</Button>
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card shadow-card">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Value</TableHead>
-                                    <TableHead>Applies To</TableHead>
-                                    <TableHead>Period</TableHead>
-                                    <TableHead>Products</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {discounts.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
-                                            <Percent className="mx-auto mb-3 h-10 w-10 opacity-40" />
-                                            No discounts found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    discounts.data.map((d) => (
-                                        <TableRow key={d.id}>
-                                            <TableCell className="font-medium">{d.name}</TableCell>
-                                            <TableCell className="capitalize">{d.type}</TableCell>
-                                            <TableCell className="font-semibold text-primary">{formatDiscountValue(d)}</TableCell>
-                                            <TableCell className="capitalize">{d.applies_to}</TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {d.start_date ? `${d.start_date} → ${d.end_date ?? '—'}` : 'No limit'}
-                                            </TableCell>
-                                            <TableCell><Badge variant="secondary">{d.products_count}</Badge></TableCell>
-                                            <TableCell><Badge variant={d.status === 'active' ? 'success' : 'outline'}>{d.status}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                        <Pagination meta={discounts.meta ?? {
-                            current_page: discounts.current_page, from: discounts.from, last_page: discounts.last_page,
-                            links: discounts.links, path: discounts.path, per_page: discounts.per_page,
-                            to: discounts.to, total: discounts.total, next_page_url: discounts.next_page_url, prev_page_url: discounts.prev_page_url,
-                        }} />
-                    </div>
+                    <DataTable
+                        data={discounts}
+                        columns={columns}
+                        routeName="admin.discounts.index"
+                        dataKey="discounts"
+                        filters={filters}
+                        searchPlaceholder="Search discounts..."
+                        emptyIcon={Percent}
+                        emptyMessage="No discounts found."
+                        rowKey={(d) => d.id}
+                        toolbarRight={
+                            <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Discount</Button>
+                        }
+                    />
                 </div>
             </AdminLayout>
 

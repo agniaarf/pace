@@ -17,12 +17,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/Components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import { Textarea } from '@/Components/ui/textarea';
-import { Pagination } from '@/Components/Pagination';
+import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Edit, Plus, Search, Trash2, Users } from 'lucide-react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { Edit, Plus, Trash2, Users } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PaginatedResponse, PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
@@ -42,7 +41,7 @@ interface Customer {
 
 interface CustomersPageProps {
     customers: PaginatedResponse<Customer>;
-    filters: { search?: string; status?: string };
+    filters: { search?: string; status?: string; per_page?: string };
 }
 
 export default function CustomersIndex() {
@@ -50,7 +49,6 @@ export default function CustomersIndex() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<Customer | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [search, setSearch] = useState(filters.search ?? '');
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         member_code: '',
@@ -97,75 +95,78 @@ export default function CustomersIndex() {
         if (deleteId) { useForm({}).delete(`/admin/customers/${deleteId}`, { onSuccess: () => setDeleteId(null) }); }
     };
 
+    const columns: Column<Customer>[] = [
+        {
+            key: 'name',
+            header: 'Name',
+            render: (c) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{c.full_name}</span>
+                    {c.email && <span className="text-xs text-muted-foreground">{c.email}</span>}
+                </div>
+            ),
+        },
+        {
+            key: 'member_code',
+            header: 'Member Code',
+            render: (c) => <span className="font-mono text-xs text-muted-foreground">{c.member_code ?? '—'}</span>,
+        },
+        {
+            key: 'phone',
+            header: 'Phone',
+            render: (c) => c.phone ?? '—',
+        },
+        {
+            key: 'total_purchases',
+            header: 'Purchases',
+            render: (c) => c.total_purchases,
+        },
+        {
+            key: 'total_spent',
+            header: 'Total Spent',
+            render: (c) => <span className="font-semibold">{formatCurrency(Number(c.total_spent))}</span>,
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (c) => <Badge variant={c.status === 'active' ? 'success' : 'outline'}>{c.status}</Badge>,
+        },
+        {
+            key: 'actions',
+            header: 'Actions',
+            headerClassName: 'text-right',
+            className: 'text-right',
+            render: (c) => (
+                <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+            ),
+        },
+    ];
+
     return (
         <>
             <Head title="Customers" />
             <AdminLayout title="Customers" subtitle="Manage customer relationships" activeRoute="/admin/customers">
                 <div className="space-y-6">
-                    {flash.success && <div className="rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
-                    {flash.error && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
+                    {flash.success && <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
+                    {flash.error && <div className="animate-fade-in rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
 
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
-                                onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/customers?search=${encodeURIComponent(search)}`; }} />
-                        </div>
-                        <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Customer</Button>
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card shadow-card">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Member Code</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                    <TableHead>Purchases</TableHead>
-                                    <TableHead>Total Spent</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {customers.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
-                                            <Users className="mx-auto mb-3 h-10 w-10 opacity-40" />
-                                            No customers found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    customers.data.map((c) => (
-                                        <TableRow key={c.id}>
-                                            <TableCell className="font-medium">
-                                                <div className="flex flex-col">
-                                                    {c.full_name}
-                                                    {c.email && <span className="text-xs text-muted-foreground">{c.email}</span>}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs text-muted-foreground">{c.member_code ?? '—'}</TableCell>
-                                            <TableCell>{c.phone ?? '—'}</TableCell>
-                                            <TableCell>{c.total_purchases}</TableCell>
-                                            <TableCell className="font-semibold">{formatCurrency(Number(c.total_spent))}</TableCell>
-                                            <TableCell><Badge variant={c.status === 'active' ? 'success' : 'outline'}>{c.status}</Badge></TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Edit className="h-4 w-4" /></Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                        <Pagination meta={customers.meta ?? {
-                            current_page: customers.current_page, from: customers.from, last_page: customers.last_page,
-                            links: customers.links, path: customers.path, per_page: customers.per_page,
-                            to: customers.to, total: customers.total, next_page_url: customers.next_page_url, prev_page_url: customers.prev_page_url,
-                        }} />
-                    </div>
+                    <DataTable
+                        data={customers}
+                        columns={columns}
+                        routeName="admin.customers.index"
+                        dataKey="customers"
+                        filters={filters}
+                        searchPlaceholder="Search customers..."
+                        emptyIcon={Users}
+                        emptyMessage="No customers found."
+                        rowKey={(c) => c.id}
+                        toolbarRight={
+                            <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Add Customer</Button>
+                        }
+                    />
                 </div>
             </AdminLayout>
 

@@ -14,17 +14,18 @@ class TransactionController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status');
+        $perPage = (int) $request->get('per_page', 10);
 
         $transactions = Transaction::with(['cashier', 'customer'])
             ->when($search, fn ($q) => $q->where('transaction_number', 'like', "%{$search}%"))
             ->when($status, fn ($q) => $q->where('status', $status))
             ->latest('transaction_date')
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Admin/Transactions/Index', [
             'transactions' => $transactions,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 
