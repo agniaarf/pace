@@ -40,7 +40,7 @@ export default function Login() {
                     <div className="mb-8 text-center">
                         <div className="mb-4 inline-flex items-center justify-center">
                             <img
-                                src="/images/pace.jpeg"
+                                src="/images/pace-logo.png"
                                 alt="PACE"
                                 className="h-16 w-16 rounded-2xl object-cover shadow-glow ring-2 ring-border animate-float"
                             />

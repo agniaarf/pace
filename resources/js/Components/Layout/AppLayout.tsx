@@ -53,7 +53,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                 <div className="flex items-center justify-between px-5 py-5">
                     <div className="flex items-center gap-3">
                         <img
-                            src="/images/pace.jpeg"
+                            src="/images/pace-logo.png"
                             alt="PACE"
                             className="h-10 w-10 rounded-xl object-cover ring-1 ring-sidebar-border"
                         />

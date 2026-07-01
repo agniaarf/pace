@@ -22,7 +22,7 @@ export default function Welcome() {
                     <header className="flex items-center justify-between py-6">
                         <div className="flex items-center gap-3">
                             <img
-                                src="/images/pace.jpeg"
+                                src="/images/pace-logo.png"
                                 alt="PACE"
                                 className="h-11 w-11 rounded-xl object-cover shadow-card ring-1 ring-border"
                             />
