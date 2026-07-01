@@ -12,20 +12,12 @@ class TransactionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $search = $request->get('search');
-        $status = $request->get('status');
-        $perPage = (int) $request->get('per_page', 10);
-
         $transactions = Transaction::with(['cashier', 'customer'])
-            ->when($search, fn ($q) => $q->where('transaction_number', 'like', "%{$search}%"))
-            ->when($status, fn ($q) => $q->where('status', $status))
             ->latest('transaction_date')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Admin/Transactions/Index', [
             'transactions' => $transactions,
-            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 

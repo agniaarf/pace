@@ -17,18 +17,9 @@ class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $search = $request->get('search');
-        $categoryId = $request->get('category_id');
-        $status = $request->get('status');
-        $perPage = (int) $request->get('per_page', 10);
-
         $products = Product::with(['category', 'discount', 'stock'])
-            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%")->orWhere('brand', 'like', "%{$search}%"))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
 
         $categories = Category::where('is_active', true)->orderBy('name')->get(['id', 'name']);
         $discounts = Discount::where('status', 'active')->orderBy('name')->get(['id', 'name']);
@@ -37,7 +28,6 @@ class ProductController extends Controller
             'products' => $products,
             'categories' => $categories,
             'discounts' => $discounts,
-            'filters' => $request->only(['search', 'category_id', 'status', 'per_page']),
         ]);
     }
 

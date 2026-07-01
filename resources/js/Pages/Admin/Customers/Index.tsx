@@ -23,7 +23,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Plus, Trash2, Users } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
-import type { PaginatedResponse, PageProps } from '@/types';
+import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface Customer {
@@ -40,12 +40,11 @@ interface Customer {
 }
 
 interface CustomersPageProps {
-    customers: PaginatedResponse<Customer>;
-    filters: { search?: string; status?: string; per_page?: string };
+    customers: Customer[];
 }
 
 export default function CustomersIndex() {
-    const { customers, filters, flash } = usePage<PageProps & CustomersPageProps>().props;
+    const { customers, flash } = usePage<PageProps & CustomersPageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<Customer | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -156,9 +155,7 @@ export default function CustomersIndex() {
                     <DataTable
                         data={customers}
                         columns={columns}
-                        routeName="admin.customers.index"
-                        dataKey="customers"
-                        filters={filters}
+                        searchKeys={['full_name', 'phone', 'member_code', 'email']}
                         searchPlaceholder="Search customers..."
                         emptyIcon={Users}
                         emptyMessage="No customers found."

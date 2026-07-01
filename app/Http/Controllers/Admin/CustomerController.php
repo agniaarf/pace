@@ -14,19 +14,10 @@ class CustomerController extends Controller
 {
     public function index(Request $request): Response
     {
-        $search = $request->get('search');
-        $status = $request->get('status');
-        $perPage = (int) $request->get('per_page', 10);
-
-        $customers = Customer::when($search, fn ($q) => $q->where('full_name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")->orWhere('member_code', 'like', "%{$search}%"))
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+        $customers = Customer::latest()->get();
 
         return Inertia::render('Admin/Customers/Index', [
             'customers' => $customers,
-            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 

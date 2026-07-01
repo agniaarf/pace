@@ -14,20 +14,12 @@ class DiscountController extends Controller
 {
     public function index(Request $request): Response
     {
-        $search = $request->get('search');
-        $status = $request->get('status');
-        $perPage = (int) $request->get('per_page', 10);
-
         $discounts = Discount::withCount('products')
-            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
-            ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('Admin/Discounts/Index', [
             'discounts' => $discounts,
-            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 

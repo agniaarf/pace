@@ -23,8 +23,8 @@ import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Package, Plus, Trash2 } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
-import type { PaginatedResponse, PageProps } from '@/types';
+import { FormEventHandler, useMemo, useState } from 'react';
+import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface Category { id: number; name: string }
@@ -48,17 +48,17 @@ interface Product {
 }
 
 interface ProductsPageProps {
-    products: PaginatedResponse<Product>;
+    products: Product[];
     categories: Category[];
     discounts: Discount[];
-    filters: { search?: string; category_id?: string; status?: string; per_page?: string };
 }
 
 export default function ProductsIndex() {
-    const { products, categories, discounts, filters, flash } = usePage<PageProps & ProductsPageProps>().props;
+    const { products, categories, discounts, flash } = usePage<PageProps & ProductsPageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         category_id: '',
@@ -112,6 +112,11 @@ export default function ProductsIndex() {
             });
         }
     };
+
+    const filteredProducts = useMemo(() => {
+        if (categoryFilter === 'all') return products;
+        return products.filter((p) => p.category_id === Number(categoryFilter));
+    }, [products, categoryFilter]);
 
     const handleDelete = () => {
         if (deleteId) {
@@ -199,11 +204,9 @@ export default function ProductsIndex() {
                     )}
 
                     <DataTable
-                        data={products}
+                        data={filteredProducts}
                         columns={columns}
-                        routeName="admin.products.index"
-                        dataKey="products"
-                        filters={filters}
+                        searchKeys={['name', 'sku', 'brand']}
                         searchPlaceholder="Search products..."
                         emptyIcon={Package}
                         emptyMessage="No products found. Click 'Add Product' to create one."
@@ -216,14 +219,8 @@ export default function ProductsIndex() {
                         }
                         toolbarLeft={
                             <Select
-                                value={filters.category_id ?? 'all'}
-                                onValueChange={(v) => {
-                                    const params = new URLSearchParams(window.location.search);
-                                    if (v === 'all') params.delete('category_id');
-                                    else params.set('category_id', v);
-                                    params.delete('page');
-                                    window.location.href = `${window.location.pathname}?${params.toString()}`;
-                                }}
+                                value={categoryFilter}
+                                onValueChange={setCategoryFilter}
                             >
                                 <SelectTrigger className="w-40">
                                     <SelectValue placeholder="Category" />

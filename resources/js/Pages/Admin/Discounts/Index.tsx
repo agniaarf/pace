@@ -22,7 +22,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Percent, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
-import type { PaginatedResponse, PageProps } from '@/types';
+import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface Discount {
@@ -38,12 +38,11 @@ interface Discount {
 }
 
 interface DiscountsPageProps {
-    discounts: PaginatedResponse<Discount>;
-    filters: { search?: string; status?: string; per_page?: string };
+    discounts: Discount[];
 }
 
 export default function DiscountsIndex() {
-    const { discounts, filters, flash } = usePage<PageProps & DiscountsPageProps>().props;
+    const { discounts, flash } = usePage<PageProps & DiscountsPageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<Discount | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -157,9 +156,7 @@ export default function DiscountsIndex() {
                     <DataTable
                         data={discounts}
                         columns={columns}
-                        routeName="admin.discounts.index"
-                        dataKey="discounts"
-                        filters={filters}
+                        searchKeys={['name']}
                         searchPlaceholder="Search discounts..."
                         emptyIcon={Percent}
                         emptyMessage="No discounts found."
