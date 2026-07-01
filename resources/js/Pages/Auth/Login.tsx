@@ -45,6 +45,9 @@ export default function Login() {
                                 className="h-20 w-auto object-contain animate-float"
                             />
                         </div>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            {app.slogan}
+                        </p>
                     </div>
 
                     {/* Login card */}
