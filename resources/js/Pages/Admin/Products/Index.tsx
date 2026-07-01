@@ -28,12 +28,10 @@ import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface Category { id: number; name: string }
-interface Discount { id: number; name: string }
 interface Stock { id: number; quantity: number; minimum_quantity: number }
 interface Product {
     id: number;
     category_id: number | null;
-    discount_id: number | null;
     name: string;
     sku: string | null;
     brand: string | null;
@@ -41,28 +39,40 @@ interface Product {
     cost_price: string;
     selling_price: string;
     description: string | null;
+    photo: string | null;
+    photo_url: string | null;
     status: 'active' | 'inactive';
     category?: Category | null;
-    discount?: Discount | null;
     stock?: Stock | null;
 }
 
 interface ProductsPageProps {
     products: Product[];
     categories: Category[];
-    discounts: Discount[];
 }
 
 export default function ProductsIndex() {
-    const { products, categories, discounts, flash } = usePage<PageProps & ProductsPageProps>().props;
+    const { products, categories, flash } = usePage<PageProps & ProductsPageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const { data, setData, post, put, processing, errors, reset } = useForm<{
+        category_id: string;
+        name: string;
+        sku: string;
+        brand: string;
+        size: string;
+        cost_price: string;
+        selling_price: string;
+        description: string;
+        photo: File | null;
+        status: 'active' | 'inactive';
+        stock_quantity: string;
+        minimum_quantity: string;
+    }>({
         category_id: '',
-        discount_id: '',
         name: '',
         sku: '',
         brand: '',
@@ -70,14 +80,17 @@ export default function ProductsIndex() {
         cost_price: '',
         selling_price: '',
         description: '',
-        status: 'active' as 'active' | 'inactive',
+        photo: null,
+        status: 'active',
         stock_quantity: '',
         minimum_quantity: '',
     });
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
     const openCreate = () => {
         setEditingProduct(null);
         reset();
+        setPhotoPreview(null);
         setDialogOpen(true);
     };
 
@@ -85,7 +98,6 @@ export default function ProductsIndex() {
         setEditingProduct(product);
         setData({
             category_id: product.category_id?.toString() ?? '',
-            discount_id: product.discount_id?.toString() ?? '',
             name: product.name,
             sku: product.sku ?? '',
             brand: product.brand ?? '',
@@ -93,10 +105,12 @@ export default function ProductsIndex() {
             cost_price: product.cost_price,
             selling_price: product.selling_price,
             description: product.description ?? '',
+            photo: null,
             status: product.status,
             stock_quantity: '',
             minimum_quantity: '',
         });
+        setPhotoPreview(product.photo_url ?? null);
         setDialogOpen(true);
     };
 
@@ -104,13 +118,27 @@ export default function ProductsIndex() {
         e.preventDefault();
         if (editingProduct) {
             put(`/admin/products/${editingProduct.id}`, {
-                onSuccess: () => { setDialogOpen(false); reset(); },
+                forceFormData: true,
+                onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
             });
         } else {
             post('/admin/products', {
-                onSuccess: () => { setDialogOpen(false); reset(); },
+                forceFormData: true,
+                onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
             });
         }
+    };
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB');
+            e.target.value = '';
+            return;
+        }
+        setData('photo', file);
+        setPhotoPreview(URL.createObjectURL(file));
     };
 
     const filteredProducts = useMemo(() => {
@@ -131,9 +159,18 @@ export default function ProductsIndex() {
             key: 'name',
             header: 'Nama',
             render: (p) => (
-                <div className="flex flex-col">
-                    <span className="font-medium">{p.name}</span>
-                    {p.brand && <span className="text-xs text-muted-foreground">{p.brand}</span>}
+                <div className="flex items-center gap-3">
+                    {p.photo_url ? (
+                        <img src={p.photo_url} alt={p.name} className="h-10 w-10 rounded-lg object-cover" />
+                    ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                            <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                    )}
+                    <div className="flex flex-col">
+                        <span className="font-medium">{p.name}</span>
+                        {p.brand && <span className="text-xs text-muted-foreground">{p.brand}</span>}
+                    </div>
                 </div>
             ),
         },
@@ -279,17 +316,6 @@ export default function ProductsIndex() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Diskon</Label>
-                                <Select value={data.discount_id} onValueChange={(v) => setData('discount_id', v)}>
-                                    <SelectTrigger><SelectValue placeholder="Tanpa diskon" /></SelectTrigger>
-                                    <SelectContent>
-                                        {discounts.map((disc) => (
-                                            <SelectItem key={disc.id} value={disc.id.toString()}>{disc.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
                                 <Label htmlFor="cost_price">Harga Modal *</Label>
                                 <Input id="cost_price" type="number" step="0.01" value={data.cost_price} onChange={(e) => setData('cost_price', e.target.value)} placeholder="0" />
                                 {errors.cost_price && <p className="text-xs text-destructive">{errors.cost_price}</p>}
@@ -316,6 +342,46 @@ export default function ProductsIndex() {
                         <div className="space-y-2">
                             <Label htmlFor="description">Deskripsi</Label>
                             <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} placeholder="Deskripsi produk..." rows={3} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Foto Produk</Label>
+                            <div className="flex items-center gap-4">
+                                {photoPreview ? (
+                                    <div className="relative">
+                                        <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-xl object-cover border border-border" />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setPhotoPreview(null); setData('photo', null); }}
+                                            className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md transition hover:scale-110"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label
+                                        htmlFor="photo"
+                                        className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition hover:border-primary hover:bg-accent"
+                                    >
+                                        <Package className="h-6 w-6 text-muted-foreground" />
+                                        <span className="mt-1 text-[10px] text-muted-foreground">Upload</span>
+                                    </label>
+                                )}
+                                <div className="flex-1">
+                                    <input
+                                        id="photo"
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handlePhotoChange}
+                                        className="hidden"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Format: JPG, PNG, WebP. Maksimal 2MB.
+                                        {editingProduct?.photo && !data.photo && ' Kosongkan jika tidak ingin mengubah foto.'}
+                                    </p>
+                                    {errors.photo && <p className="text-xs text-destructive">{errors.photo}</p>}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-3">
