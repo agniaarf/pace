@@ -25,7 +25,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Package, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
 
 interface Category { id: number; name: string }
 interface Stock { id: number; quantity: number; minimum_quantity: number }
@@ -55,6 +55,8 @@ export default function ProductsIndex() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [costPriceDisplay, setCostPriceDisplay] = useState('');
+    const [sellingPriceDisplay, setSellingPriceDisplay] = useState('');
 
     const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm<{
@@ -86,6 +88,8 @@ export default function ProductsIndex() {
     const openCreate = () => {
         setEditingProduct(null);
         reset();
+        setCostPriceDisplay('');
+        setSellingPriceDisplay('');
         setDialogOpen(true);
     };
 
@@ -104,6 +108,8 @@ export default function ProductsIndex() {
             stock_quantity: '',
             minimum_quantity: '',
         });
+        setCostPriceDisplay(formatNumberInput(product.cost_price));
+        setSellingPriceDisplay(formatNumberInput(product.selling_price));
         setDialogOpen(true);
     };
 
@@ -293,12 +299,20 @@ export default function ProductsIndex() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="cost_price">Harga Modal *</Label>
-                                <Input id="cost_price" type="number" step="0.01" value={data.cost_price} onChange={(e) => setData('cost_price', e.target.value)} placeholder="0" />
+                                <Input id="cost_price" type="text" inputMode="numeric" value={costPriceDisplay} onChange={(e) => {
+                                    const formatted = formatNumberInput(e.target.value);
+                                    setCostPriceDisplay(formatted);
+                                    setData('cost_price', String(parseNumberInput(formatted)));
+                                }} placeholder="0" />
                                 {errors.cost_price && <p className="text-xs text-destructive">{errors.cost_price}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="selling_price">Harga Jual *</Label>
-                                <Input id="selling_price" type="number" step="0.01" value={data.selling_price} onChange={(e) => setData('selling_price', e.target.value)} placeholder="0" />
+                                <Input id="selling_price" type="text" inputMode="numeric" value={sellingPriceDisplay} onChange={(e) => {
+                                    const formatted = formatNumberInput(e.target.value);
+                                    setSellingPriceDisplay(formatted);
+                                    setData('selling_price', String(parseNumberInput(formatted)));
+                                }} placeholder="0" />
                                 {errors.selling_price && <p className="text-xs text-destructive">{errors.selling_price}</p>}
                             </div>
                             {!editingProduct && (

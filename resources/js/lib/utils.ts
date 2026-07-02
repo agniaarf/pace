@@ -17,3 +17,13 @@ export function formatCurrency(value: number): string {
 export function formatNumber(value: number): string {
     return new Intl.NumberFormat('id-ID').format(value);
 }
+
+export function formatNumberInput(value: string): string {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    return new Intl.NumberFormat('id-ID').format(Number(digits));
+}
+
+export function parseNumberInput(value: string): number {
+    return Number(value.replace(/\D/g, '')) || 0;
+}

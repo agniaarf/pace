@@ -24,7 +24,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { Check, Edit, Percent, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
 
 interface Discount {
     id: number;
@@ -58,6 +58,7 @@ export default function DiscountsIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [productPickerOpen, setProductPickerOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
+    const [valueDisplay, setValueDisplay] = useState('');
 
     const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -71,7 +72,7 @@ export default function DiscountsIndex() {
         status: 'active' as 'active' | 'inactive',
     });
 
-    const openCreate = () => { setEditing(null); reset(); setProductPickerOpen(false); setDialogOpen(true); };
+    const openCreate = () => { setEditing(null); reset(); setValueDisplay(''); setProductPickerOpen(false); setDialogOpen(true); };
 
     const openEdit = (d: Discount) => {
         setEditing(d);
@@ -85,6 +86,7 @@ export default function DiscountsIndex() {
             end_date: d.end_date ?? '',
             status: d.status,
         });
+        setValueDisplay(d.type === 'nominal' ? formatNumberInput(d.value) : d.value);
         setProductPickerOpen(false);
         setDialogOpen(true);
     };
@@ -227,7 +229,11 @@ export default function DiscountsIndex() {
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Tipe</Label>
-                                <Select value={data.type} onValueChange={(v) => setData('type', v as 'percentage' | 'nominal')}>
+                                <Select value={data.type} onValueChange={(v) => {
+                                    setData('type', v as 'percentage' | 'nominal');
+                                    setValueDisplay('');
+                                    setData('value', '');
+                                }}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="percentage">Percentage (%)</SelectItem>
@@ -237,7 +243,16 @@ export default function DiscountsIndex() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="value">Nilai *</Label>
-                                <Input id="value" type="number" step="0.01" value={data.value} onChange={(e) => setData('value', e.target.value)} placeholder="0" />
+                                <Input id="value" type="text" inputMode="numeric" value={valueDisplay} onChange={(e) => {
+                                    if (data.type === 'nominal') {
+                                        const formatted = formatNumberInput(e.target.value);
+                                        setValueDisplay(formatted);
+                                        setData('value', String(parseNumberInput(formatted)));
+                                    } else {
+                                        setValueDisplay(e.target.value);
+                                        setData('value', e.target.value);
+                                    }
+                                }} placeholder="0" />
                                 {errors.value && <p className="text-xs text-destructive">{errors.value}</p>}
                             </div>
                         </div>
