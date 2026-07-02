@@ -172,7 +172,7 @@ export default function CustomersIndex() {
             </AdminLayout>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editing ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</DialogTitle>
                         <DialogDescription>{editing ? 'Perbarui informasi pelanggan.' : 'Daftarkan pelanggan baru.'}</DialogDescription>

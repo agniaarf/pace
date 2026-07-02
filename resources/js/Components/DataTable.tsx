@@ -131,7 +131,8 @@ export function DataTable<T>({
 
             {/* Table */}
             <div className="rounded-xl border border-border bg-card shadow-card">
-                <Table>
+                <div className="overflow-x-auto">
+                    <Table>
                     <TableHeader>
                         <TableRow>
                             {showRowNumber && <TableHead className="w-16">No.</TableHead>}
@@ -163,7 +164,8 @@ export function DataTable<T>({
                             ))
                         )}
                     </TableBody>
-                </Table>
+                    </Table>
+                </div>
 
                 {/* Pagination footer */}
                 {total > 0 && (
@@ -201,6 +203,8 @@ export function DataTable<T>({
                                 >
                                     <ChevronLeft className="h-3.5 w-3.5" />
                                 </button>
+                                <span className="px-2 text-sm font-medium text-foreground sm:hidden">{safePage}/{lastPage}</span>
+                                <div className="hidden sm:flex sm:items-center sm:gap-1">
                                 {pages.map((page, i) =>
                                     typeof page === 'number' ? (
                                         <button
@@ -221,6 +225,7 @@ export function DataTable<T>({
                                         </span>
                                     ),
                                 )}
+                                </div>
                                 <button
                                     onClick={() => handlePageChange(safePage + 1)}
                                     disabled={safePage === lastPage}

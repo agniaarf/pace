@@ -47,8 +47,8 @@ export default function TransactionShow() {
             <Head title={`Transaksi ${transaction.transaction_number}`} />
             <AdminLayout title="Detail Transaksi" subtitle={transaction.transaction_number} activeRoute="/admin/transactions">
                 <div className="space-y-6">
-                    <Link href="/admin/transactions">
-                        <Button variant="outline" size="sm"><ArrowLeft className="h-4 w-4" />Kembali ke Transaksi</Button>
+                    <Link href="/admin/transactions" className="block">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4" />Kembali ke Transaksi</Button>
                     </Link>
 
                     <div className="grid gap-6 lg:grid-cols-3">
@@ -66,7 +66,7 @@ export default function TransactionShow() {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead className="w-16">No.</TableHead>
-                                                <TableHead>Produk</TableHead>
+                                                <TableHead className="min-w-[150px]">Produk</TableHead>
                                                 <TableHead>Jumlah</TableHead>
                                                 <TableHead>Harga Satuan</TableHead>
                                                 <TableHead>Diskon</TableHead>

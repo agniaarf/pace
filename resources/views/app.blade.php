@@ -7,7 +7,7 @@
 
         <title inertia>{{ config('app.name', 'PACE') }}</title>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" href="/images/pace-logo.png" type="image/png">
 
         @fonts
         @routes

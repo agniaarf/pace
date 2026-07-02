@@ -140,13 +140,6 @@ export default function Login() {
                                 {processing ? 'Masuk...' : 'Masuk'}
                             </Button>
                         </form>
-
-                        {/* Demo credentials hint */}
-                        <div className="mt-6 rounded-lg border border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
-                            <p className="font-semibold text-foreground">Akun demo:</p>
-                            <p className="mt-1">Admin: <span className="font-mono">admin / password</span></p>
-                            <p>Kasir: <span className="font-mono">kasir / password</span></p>
-                        </div>
                     </div>
 
                     <p className="mt-6 text-center text-xs text-muted-foreground">

@@ -188,7 +188,7 @@ export default function DiscountsIndex() {
             </AdminLayout>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editing ? 'Edit Diskon' : 'Tambah Diskon'}</DialogTitle>
                         <DialogDescription>{editing ? 'Perbarui informasi diskon.' : 'Buat diskon promosi baru.'}</DialogDescription>

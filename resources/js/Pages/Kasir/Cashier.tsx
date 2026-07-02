@@ -64,7 +64,7 @@ interface ActiveDiscount {
     name: string;
     type: 'percentage' | 'nominal';
     value: number;
-    applies_to: 'all' | 'category' | 'product';
+    applies_to: 'all' | 'product';
     target_ids: number[] | null;
 }
 
@@ -567,13 +567,13 @@ export default function Cashier() {
                             </div>
                         )}
 
-                        <div className="flex gap-3">
-                            <Button variant="outline" onClick={() => setCheckoutStep(null)}>
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <Button variant="outline" onClick={() => setCheckoutStep(null)} className="w-full sm:w-auto">
                                 <ArrowLeft className="h-4 w-4" />Kembali
                             </Button>
                             <Button
                                 variant="gradient"
-                                className="flex-1 justify-center"
+                                className="flex-1 justify-center w-full"
                                 disabled={!paymentMethodId || (cashAmount < totalAmount && cashAmount > 0) || processing}
                                 onClick={handleCheckout}
                             >

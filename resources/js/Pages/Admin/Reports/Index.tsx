@@ -70,12 +70,12 @@ export default function ReportsIndex() {
                     {/* Period selector + export */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap gap-2">
-                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm">7 Hari Terakhir</Button></Link>
-                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm">30 Hari Terakhir</Button></Link>
-                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm">90 Hari Terakhir</Button></Link>
+                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">7 Hari Terakhir</Button></Link>
+                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">30 Hari Terakhir</Button></Link>
+                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">90 Hari Terakhir</Button></Link>
                         </div>
-                        <a href={`/admin/reports/export?days=${days}`}>
-                            <Button variant="outline" size="sm">
+                        <a href={`/admin/reports/export?days=${days}`} className="block">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                 <Download className="h-4 w-4" />Ekspor CSV
                             </Button>
                         </a>

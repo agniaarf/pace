@@ -96,13 +96,13 @@ export default function CategoriesIndex() {
                         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>
                     )}
 
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="relative flex-1 max-w-sm">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="relative w-full max-w-sm">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
                                 onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/categories?search=${encodeURIComponent(search)}`; }} />
                         </div>
-                        <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Tambah Kategori</Button>
+                        <Button variant="gradient" onClick={openCreate} className="w-full sm:w-auto"><Plus className="h-4 w-4" />Tambah Kategori</Button>
                     </div>
 
                     <div className="rounded-xl border border-border bg-card shadow-card">
@@ -158,7 +158,7 @@ export default function CategoriesIndex() {
             </AdminLayout>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editing ? 'Edit Kategori' : 'Tambah Kategori'}</DialogTitle>
                         <DialogDescription>{editing ? 'Perbarui informasi kategori.' : 'Buat kategori produk baru.'}</DialogDescription>

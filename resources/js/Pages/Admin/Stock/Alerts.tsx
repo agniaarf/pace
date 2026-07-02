@@ -151,8 +151,8 @@ export default function StockAlerts() {
                         </Card>
                     )}
 
-                    <Link href="/admin/stock">
-                        <Button variant="outline">
+                    <Link href="/admin/stock" className="block">
+                        <Button variant="outline" className="w-full sm:w-auto">
                             <ArrowLeft className="h-4 w-4" />Kembali ke Manajemen Stok
                         </Button>
                     </Link>

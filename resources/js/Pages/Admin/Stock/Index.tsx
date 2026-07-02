@@ -98,7 +98,7 @@ export default function StockIndex() {
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="relative max-w-sm flex-1">
+                        <div className="relative w-full max-w-sm flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input placeholder="Cari berdasarkan nama produk atau SKU..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10"
                                 onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/stock?search=${encodeURIComponent(search)}`; }} />
@@ -157,7 +157,7 @@ export default function StockIndex() {
             </AdminLayout>
 
             <Dialog open={adjustStock !== null} onOpenChange={(open) => !open && setAdjustStock(null)}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Sesuaikan Stok</DialogTitle>
                         <DialogDescription>

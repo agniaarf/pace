@@ -104,8 +104,8 @@ export default function DiscountProducts() {
                                     Nilai: <span className="font-semibold text-primary">{formatDiscountValue()}</span>
                                 </p>
                             </div>
-                            <Link href="/admin/discounts">
-                                <Button variant="outline">
+                            <Link href="/admin/discounts" className="block">
+                                <Button variant="outline" className="w-full sm:w-auto">
                                     <ArrowLeft className="h-4 w-4" />
                                     Kembali ke Diskon
                                 </Button>
@@ -126,8 +126,8 @@ export default function DiscountProducts() {
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Search + actions */}
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="relative flex-1 min-w-[200px]">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+                                <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
                                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         placeholder="Cari produk..."
@@ -180,11 +180,11 @@ export default function DiscountProducts() {
                             </div>
 
                             {/* Submit */}
-                            <div className="flex justify-end gap-2">
-                                <Link href="/admin/discounts">
-                                    <Button type="button" variant="outline">Batal</Button>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                <Link href="/admin/discounts" className="block">
+                                    <Button type="button" variant="outline" className="w-full sm:w-auto">Batal</Button>
                                 </Link>
-                                <Button type="submit" variant="gradient" disabled={processing}>
+                                <Button type="submit" variant="gradient" disabled={processing} className="w-full sm:w-auto">
                                     {processing ? 'Menyimpan...' : 'Simpan Produk Terpilih'}
                                 </Button>
                             </div>
