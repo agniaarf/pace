@@ -113,8 +113,15 @@ export default function ProductsIndex() {
         setDialogOpen(true);
     };
 
+    const [priceError, setPriceError] = useState('');
+
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
+        if (Number(data.selling_price) <= Number(data.cost_price)) {
+            setPriceError('Harga jual harus lebih besar dari harga modal.');
+            return;
+        }
+        setPriceError('');
         if (editingProduct) {
             put(`/admin/products/${editingProduct.id}`, {
                 preserveScroll: true,
@@ -314,6 +321,7 @@ export default function ProductsIndex() {
                                     setData('selling_price', String(parseNumberInput(formatted)));
                                 }} placeholder="0" />
                                 {errors.selling_price && <p className="text-xs text-destructive">{errors.selling_price}</p>}
+                                {priceError && <p className="text-xs text-destructive">{priceError}</p>}
                             </div>
                             {!editingProduct && (
                                 <>

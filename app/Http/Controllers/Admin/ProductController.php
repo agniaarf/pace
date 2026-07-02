@@ -37,7 +37,7 @@ class ProductController extends Controller
             'brand' => ['nullable', 'string', 'max:100'],
             'size' => ['nullable', 'string', 'max:50'],
             'cost_price' => ['required', 'numeric', 'min:0'],
-            'selling_price' => ['required', 'numeric', 'min:0'],
+            'selling_price' => ['required', 'numeric', 'min:0', 'gt:cost_price'],
             'description' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
@@ -71,7 +71,7 @@ class ProductController extends Controller
             'brand' => ['nullable', 'string', 'max:100'],
             'size' => ['nullable', 'string', 'max:50'],
             'cost_price' => ['required', 'numeric', 'min:0'],
-            'selling_price' => ['required', 'numeric', 'min:0'],
+            'selling_price' => ['required', 'numeric', 'min:0', 'gt:cost_price'],
             'description' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
