@@ -18,7 +18,7 @@ class CategoryController extends Controller
 
         $categories = Category::withCount('products')
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
-            ->orderBy('sort_order')
+            ->latest()
             ->paginate(10)
             ->withQueryString();
 
@@ -37,6 +37,10 @@ class CategoryController extends Controller
             'is_active' => ['boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        if (!isset($validated['sort_order']) || $validated['sort_order'] == 0) {
+            $validated['sort_order'] = Category::max('sort_order') + 1;
+        }
 
         Category::create($validated);
 
