@@ -31,7 +31,7 @@ interface Discount {
     name: string;
     type: 'percentage' | 'nominal';
     value: string;
-    applies_to: 'all' | 'category' | 'product';
+    applies_to: 'all' | 'product';
     target_ids: number[] | null;
     start_date: string | null;
     end_date: string | null;
@@ -65,7 +65,7 @@ export default function DiscountsIndex() {
         name: '',
         type: 'percentage' as 'percentage' | 'nominal',
         value: '',
-        applies_to: 'all' as 'all' | 'category' | 'product',
+        applies_to: 'all' as 'all' | 'product',
         target_ids: [] as number[],
         start_date: '',
         end_date: '',
@@ -94,9 +94,15 @@ export default function DiscountsIndex() {
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         if (editing) {
-            put(`/admin/discounts/${editing.id}`, { onSuccess: () => { setDialogOpen(false); reset(); } });
+            put(`/admin/discounts/${editing.id}`, {
+                onSuccess: () => { setDialogOpen(false); reset(); },
+                onError: () => { setProductPickerOpen(false); },
+            });
         } else {
-            post('/admin/discounts', { onSuccess: () => { setDialogOpen(false); reset(); } });
+            post('/admin/discounts', {
+                onSuccess: () => { setDialogOpen(false); reset(); },
+                onError: () => { setProductPickerOpen(false); },
+            });
         }
     };
 
@@ -258,7 +264,7 @@ export default function DiscountsIndex() {
                         </div>
                         <div className="space-y-2">
                             <Label>Berlaku Untuk</Label>
-                            <Select value={data.applies_to} onValueChange={(v) => { setData('applies_to', v as 'all' | 'category' | 'product'); if (v !== 'product') setData('target_ids', []); }}>
+                            <Select value={data.applies_to} onValueChange={(v) => { setData('applies_to', v as 'all' | 'product'); if (v !== 'product') setData('target_ids', []); }}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Produk</SelectItem>

@@ -35,6 +35,7 @@ class DiscountController extends Controller
             'value' => ['required', 'numeric', 'min:0'],
             'applies_to' => ['required', Rule::in(['all', 'product'])],
             'target_ids' => ['nullable', 'array'],
+            'target_ids.*' => ['integer', 'exists:products,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -42,7 +43,7 @@ class DiscountController extends Controller
 
         $discount = Discount::create($validated);
 
-        $this->syncProductDiscounts($discount);
+        $this->syncProductDiscounts($discount, $validated['target_ids'] ?? []);
 
         return back()->with('success', 'Diskon berhasil dibuat.');
     }
@@ -55,6 +56,7 @@ class DiscountController extends Controller
             'value' => ['required', 'numeric', 'min:0'],
             'applies_to' => ['required', Rule::in(['all', 'product'])],
             'target_ids' => ['nullable', 'array'],
+            'target_ids.*' => ['integer', 'exists:products,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -62,7 +64,7 @@ class DiscountController extends Controller
 
         $discount->update($validated);
 
-        $this->syncProductDiscounts($discount);
+        $this->syncProductDiscounts($discount, $validated['target_ids'] ?? []);
 
         return back()->with('success', 'Diskon berhasil diperbarui.');
     }
@@ -76,14 +78,16 @@ class DiscountController extends Controller
         return back()->with('success', 'Diskon berhasil dihapus.');
     }
 
-    private function syncProductDiscounts(Discount $discount): void
+    private function syncProductDiscounts(Discount $discount, ?array $targetIds = null): void
     {
         Product::where('discount_id', $discount->id)->update(['discount_id' => null]);
 
+        $ids = $targetIds ?? $discount->target_ids ?? [];
+
         if ($discount->applies_to === 'all') {
             Product::query()->update(['discount_id' => $discount->id]);
-        } elseif ($discount->applies_to === 'product' && !empty($discount->target_ids)) {
-            Product::whereIn('id', $discount->target_ids)->update(['discount_id' => $discount->id]);
+        } elseif ($discount->applies_to === 'product' && !empty($ids)) {
+            Product::whereIn('id', $ids)->update(['discount_id' => $discount->id]);
         }
     }
 }
