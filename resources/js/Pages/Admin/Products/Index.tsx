@@ -175,7 +175,7 @@ export default function ProductsIndex() {
         {
             key: 'status',
             header: 'Status',
-            render: (p) => <Badge variant={p.status === 'active' ? 'default' : 'secondary'}>{p.status}</Badge>,
+            render: (p) => <Badge variant={p.status === 'active' ? 'success' : 'destructive'}>{p.status === 'active' ? 'Aktif' : 'Tidak'}</Badge>,
         },
         {
             key: 'actions',
@@ -187,9 +187,11 @@ export default function ProductsIndex() {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {p.status !== 'active' && (
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    )}
                 </div>
             ),
         },

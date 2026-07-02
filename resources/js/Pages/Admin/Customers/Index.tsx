@@ -128,7 +128,7 @@ export default function CustomersIndex() {
         {
             key: 'status',
             header: 'Status',
-            render: (c) => <Badge variant={c.status === 'active' ? 'success' : 'outline'}>{c.status}</Badge>,
+            render: (c) => <Badge variant={c.status === 'active' ? 'success' : 'destructive'}>{c.status === 'active' ? 'Aktif' : 'Tidak'}</Badge>,
         },
         {
             key: 'actions',
@@ -138,7 +138,9 @@ export default function CustomersIndex() {
             render: (c) => (
                 <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Edit className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {c.status !== 'active' && (
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    )}
                 </div>
             ),
         },

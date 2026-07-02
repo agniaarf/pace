@@ -169,7 +169,7 @@ export default function DiscountsIndex() {
         {
             key: 'status',
             header: 'Status',
-            render: (d) => <Badge variant={d.status === 'active' ? 'success' : 'outline'}>{d.status}</Badge>,
+            render: (d) => <Badge variant={d.status === 'active' ? 'success' : 'destructive'}>{d.status === 'active' ? 'Aktif' : 'Tidak'}</Badge>,
         },
         {
             key: 'actions',
@@ -179,7 +179,9 @@ export default function DiscountsIndex() {
             render: (d) => (
                 <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {d.status !== 'active' && (
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    )}
                 </div>
             ),
         },

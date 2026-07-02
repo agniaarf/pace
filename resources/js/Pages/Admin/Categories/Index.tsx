@@ -131,11 +131,13 @@ export default function CategoriesIndex() {
                                             <TableCell className="font-medium">{cat.name}</TableCell>
                                             <TableCell className="text-muted-foreground">{cat.description ?? '—'}</TableCell>
                                             <TableCell><Badge variant="secondary">{cat.products_count} produk</Badge></TableCell>
-                                            <TableCell><Badge variant={cat.is_active ? 'success' : 'outline'}>{cat.is_active ? 'Aktif' : 'Nonaktif'}</Badge></TableCell>
+                                            <TableCell><Badge variant={cat.is_active ? 'success' : 'destructive'}>{cat.is_active ? 'Aktif' : 'Tidak'}</Badge></TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1">
                                                     <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}><Edit className="h-4 w-4" /></Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(cat.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                    {cat.is_active !== true && (
+                                                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(cat.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
