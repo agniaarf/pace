@@ -20,9 +20,9 @@ import {
 import { DataTable, type Column } from '@/Components/DataTable';
 import { DatePicker } from '@/Components/ui/calendar';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { Check, Edit, Percent, Plus, Search, Trash2, X } from 'lucide-react';
-import { FormEventHandler, useMemo, useState } from 'react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Edit, ListChecks, Percent, Plus, Trash2 } from 'lucide-react';
+import { FormEventHandler, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
 
@@ -39,25 +39,15 @@ interface Discount {
     products_count: number;
 }
 
-interface Product {
-    id: number;
-    name: string;
-    sku: string | null;
-    brand: string | null;
-}
-
 interface DiscountsPageProps {
     discounts: Discount[];
-    products: Product[];
 }
 
 export default function DiscountsIndex() {
-    const { discounts, products, flash } = usePage<PageProps & DiscountsPageProps>().props;
+    const { discounts, flash } = usePage<PageProps & DiscountsPageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<Discount | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [productPickerOpen, setProductPickerOpen] = useState(false);
-    const [productSearch, setProductSearch] = useState('');
     const [valueDisplay, setValueDisplay] = useState('');
 
     const deleteForm = useForm();
@@ -66,13 +56,12 @@ export default function DiscountsIndex() {
         type: 'percentage' as 'percentage' | 'nominal',
         value: '',
         applies_to: 'all' as 'all' | 'product',
-        target_ids: [] as number[],
         start_date: '',
         end_date: '',
         status: 'active' as 'active' | 'inactive',
     });
 
-    const openCreate = () => { setEditing(null); reset(); setValueDisplay(''); setProductPickerOpen(false); setDialogOpen(true); };
+    const openCreate = () => { setEditing(null); reset(); setValueDisplay(''); setDialogOpen(true); };
 
     const openEdit = (d: Discount) => {
         setEditing(d);
@@ -81,13 +70,11 @@ export default function DiscountsIndex() {
             type: d.type,
             value: d.value,
             applies_to: d.applies_to,
-            target_ids: d.target_ids ?? [],
             start_date: d.start_date ?? '',
             end_date: d.end_date ?? '',
             status: d.status,
         });
         setValueDisplay(d.type === 'nominal' ? formatNumberInput(d.value) : d.value);
-        setProductPickerOpen(false);
         setDialogOpen(true);
     };
 
@@ -96,12 +83,10 @@ export default function DiscountsIndex() {
         if (editing) {
             put(`/admin/discounts/${editing.id}`, {
                 onSuccess: () => { setDialogOpen(false); reset(); },
-                onError: () => { setProductPickerOpen(false); },
             });
         } else {
             post('/admin/discounts', {
                 onSuccess: () => { setDialogOpen(false); reset(); },
-                onError: () => { setProductPickerOpen(false); },
             });
         }
     };
@@ -114,31 +99,6 @@ export default function DiscountsIndex() {
         if (d.type === 'percentage') return `${d.value}%`;
         return formatCurrency(Number(d.value));
     };
-
-    const filteredProducts = useMemo(() => {
-        if (!productSearch) return products;
-        const q = productSearch.toLowerCase();
-        return products.filter((p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.sku?.toLowerCase().includes(q) ||
-            p.brand?.toLowerCase().includes(q)
-        );
-    }, [products, productSearch]);
-
-    const toggleProduct = (id: number) => {
-        setData('target_ids',
-            data.target_ids.includes(id)
-                ? data.target_ids.filter((tid) => tid !== id)
-                : [...data.target_ids, id]
-        );
-    };
-
-    const selectedProductNames = useMemo(() => {
-        return data.target_ids
-            .map((id) => products.find((p) => p.id === id))
-            .filter(Boolean)
-            .map((p) => p!.name);
-    }, [data.target_ids, products]);
 
     const columns: Column<Discount>[] = [
         {
@@ -173,7 +133,11 @@ export default function DiscountsIndex() {
         {
             key: 'products_count',
             header: 'Produk',
-            render: (d) => <Badge variant="secondary">{d.products_count}</Badge>,
+            render: (d) => (
+                <Link href={`/admin/discounts/${d.id}/products`}>
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10">{d.products_count}</Badge>
+                </Link>
+            ),
         },
         {
             key: 'status',
@@ -187,6 +151,9 @@ export default function DiscountsIndex() {
             className: 'text-right',
             render: (d) => (
                 <div className="flex justify-end gap-1">
+                    <Link href={`/admin/discounts/${d.id}/products`}>
+                        <Button variant="ghost" size="icon" title="Kelola Produk"><ListChecks className="h-4 w-4" /></Button>
+                    </Link>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
                     {d.status !== 'active' && (
                         <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -264,43 +231,19 @@ export default function DiscountsIndex() {
                         </div>
                         <div className="space-y-2">
                             <Label>Berlaku Untuk</Label>
-                            <Select value={data.applies_to} onValueChange={(v) => { setData('applies_to', v as 'all' | 'product'); if (v !== 'product') setData('target_ids', []); }}>
+                            <Select value={data.applies_to} onValueChange={(v) => setData('applies_to', v as 'all' | 'product')}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Produk</SelectItem>
                                     <SelectItem value="product">Produk Tertentu</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {data.applies_to === 'product' && (
+                                <p className="text-xs text-muted-foreground">
+                                    Pilih produk di halaman terpisah setelah diskon dibuat/simpan.
+                                </p>
+                            )}
                         </div>
-
-                        {data.applies_to === 'product' && (
-                            <div className="space-y-2">
-                                <Label>Produk Terpilih ({data.target_ids.length})</Label>
-                                {selectedProductNames.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {selectedProductNames.map((name) => (
-                                            <Badge key={name} variant="secondary" className="gap-1">
-                                                {name}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const prod = products.find((p) => p.name === name);
-                                                        if (prod) toggleProduct(prod.id);
-                                                    }}
-                                                    className="ml-0.5 rounded-full hover:bg-destructive/20"
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </button>
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                )}
-                                <Button type="button" variant="outline" size="sm" onClick={() => setProductPickerOpen(true)}>
-                                    <Plus className="h-4 w-4" />
-                                    Pilih Produk
-                                </Button>
-                            </div>
-                        )}
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -335,62 +278,6 @@ export default function DiscountsIndex() {
                             <Button type="submit" variant="gradient" disabled={processing}>{processing ? 'Menyimpan...' : editing ? 'Perbarui' : 'Buat'}</Button>
                         </DialogFooter>
                     </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Product Picker Dialog */}
-            <Dialog open={productPickerOpen} onOpenChange={setProductPickerOpen} modal={false}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>Pilih Produk</DialogTitle>
-                        <DialogDescription>Cari dan pilih produk yang akan mendapatkan diskon ini.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-3">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Cari produk..."
-                                value={productSearch}
-                                onChange={(e) => setProductSearch(e.target.value)}
-                                className="pl-9"
-                            />
-                        </div>
-                        <div className="max-h-[40vh] space-y-1 overflow-y-auto rounded-lg border border-border p-2">
-                            {filteredProducts.length === 0 ? (
-                                <p className="py-4 text-center text-sm text-muted-foreground">Produk tidak ditemukan.</p>
-                            ) : (
-                                filteredProducts.map((p) => {
-                                    const selected = data.target_ids.includes(p.id);
-                                    return (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            onClick={() => toggleProduct(p.id)}
-                                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                                                selected ? 'bg-primary/10 text-primary' : 'hover:bg-accent'
-                                            }`}
-                                        >
-                                            <div className="flex flex-col">
-                                                <span className="font-medium">{p.name}</span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {p.sku ?? '—'} {p.brand ? `· ${p.brand}` : ''}
-                                                </span>
-                                            </div>
-                                            {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                                        </button>
-                                    );
-                                })
-                            )}
-                        </div>
-                        {data.target_ids.length > 0 && (
-                            <p className="text-xs text-muted-foreground">{data.target_ids.length} produk terpilih</p>
-                        )}
-                    </div>
-                    <DialogFooter>
-                        <Button type="button" variant="gradient" onClick={() => setProductPickerOpen(false)}>
-                            Selesai ({data.target_ids.length})
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

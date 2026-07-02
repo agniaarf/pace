@@ -34,8 +34,6 @@ class DiscountController extends Controller
             'type' => ['required', Rule::in(['percentage', 'nominal'])],
             'value' => ['required', 'numeric', 'min:0'],
             'applies_to' => ['required', Rule::in(['all', 'product'])],
-            'target_ids' => ['nullable', 'array'],
-            'target_ids.*' => ['integer', 'exists:products,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -43,7 +41,9 @@ class DiscountController extends Controller
 
         $discount = Discount::create($validated);
 
-        $this->syncProductDiscounts($discount, $validated['target_ids'] ?? []);
+        if ($discount->applies_to === 'all') {
+            $this->syncProductDiscounts($discount, []);
+        }
 
         return back()->with('success', 'Diskon berhasil dibuat.');
     }
@@ -55,8 +55,6 @@ class DiscountController extends Controller
             'type' => ['required', Rule::in(['percentage', 'nominal'])],
             'value' => ['required', 'numeric', 'min:0'],
             'applies_to' => ['required', Rule::in(['all', 'product'])],
-            'target_ids' => ['nullable', 'array'],
-            'target_ids.*' => ['integer', 'exists:products,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
@@ -64,9 +62,35 @@ class DiscountController extends Controller
 
         $discount->update($validated);
 
-        $this->syncProductDiscounts($discount, $validated['target_ids'] ?? []);
+        if ($discount->applies_to === 'all') {
+            $this->syncProductDiscounts($discount, []);
+        }
 
         return back()->with('success', 'Diskon berhasil diperbarui.');
+    }
+
+    public function products(Discount $discount): Response
+    {
+        $discount->load('products:id,name,sku,brand');
+
+        $products = Product::orderBy('name')->get(['id', 'name', 'sku', 'brand']);
+
+        return Inertia::render('Admin/Discounts/Products', [
+            'discount' => $discount,
+            'products' => $products,
+        ]);
+    }
+
+    public function syncProducts(Request $request, Discount $discount): RedirectResponse
+    {
+        $validated = $request->validate([
+            'target_ids' => ['nullable', 'array'],
+            'target_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+
+        $this->syncProductDiscounts($discount, $validated['target_ids'] ?? []);
+
+        return back()->with('success', 'Produk diskon berhasil diperbarui.');
     }
 
     public function destroy(Discount $discount): RedirectResponse

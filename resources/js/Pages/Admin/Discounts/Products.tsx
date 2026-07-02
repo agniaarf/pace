@@ -1,0 +1,197 @@
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Check, Info, Package, Search } from 'lucide-react';
+import { FormEventHandler, useMemo, useState } from 'react';
+import type { PageProps } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+
+interface DiscountProduct {
+    id: number;
+    name: string;
+    sku: string | null;
+    brand: string | null;
+}
+
+interface DiscountInfo {
+    id: number;
+    name: string;
+    type: 'percentage' | 'nominal';
+    value: string;
+    applies_to: 'all' | 'product';
+    target_ids: number[] | null;
+}
+
+interface DiscountProductsPageProps {
+    discount: DiscountInfo;
+    products: DiscountProduct[];
+}
+
+export default function DiscountProducts() {
+    const { discount, products, flash } = usePage<PageProps & DiscountProductsPageProps>().props;
+    const [search, setSearch] = useState('');
+
+    const initialSelected = useMemo(() => {
+        if (discount.applies_to === 'all') return products.map((p) => p.id);
+        return discount.target_ids ?? [];
+    }, [discount, products]);
+
+    const { data, setData, post, processing, reset } = useForm<{
+        target_ids: number[];
+    }>({
+        target_ids: initialSelected,
+    });
+
+    const filteredProducts = useMemo(() => {
+        if (!search) return products;
+        const q = search.toLowerCase();
+        return products.filter((p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.sku?.toLowerCase().includes(q) ||
+            p.brand?.toLowerCase().includes(q)
+        );
+    }, [products, search]);
+
+    const toggleProduct = (id: number) => {
+        setData('target_ids',
+            data.target_ids.includes(id)
+                ? data.target_ids.filter((tid) => tid !== id)
+                : [...data.target_ids, id]
+        );
+    };
+
+    const selectAll = () => setData('target_ids', products.map((p) => p.id));
+    const deselectAll = () => setData('target_ids', []);
+
+    const handleSubmit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(`/admin/discounts/${discount.id}/products`, {
+            preserveScroll: true,
+            onSuccess: () => reset(),
+        });
+    };
+
+    const formatDiscountValue = () => {
+        if (discount.type === 'percentage') return `${discount.value}%`;
+        return formatCurrency(Number(discount.value));
+    };
+
+    return (
+        <>
+            <Head title={`Produk Diskon — ${discount.name}`} />
+            <AdminLayout title="Produk Diskon" subtitle={discount.name} activeRoute="/admin/discounts">
+                <div className="space-y-6">
+                    {flash.success && (
+                        <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
+                            {flash.success}
+                        </div>
+                    )}
+
+                    {/* Discount info card */}
+                    <div className="rounded-xl border border-border bg-card p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-lg font-bold text-foreground">{discount.name}</h2>
+                                    <Badge variant={discount.applies_to === 'all' ? 'success' : 'secondary'}>
+                                        {discount.applies_to === 'all' ? 'Semua Produk' : 'Produk Tertentu'}
+                                    </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Nilai: <span className="font-semibold text-primary">{formatDiscountValue()}</span>
+                                </p>
+                            </div>
+                            <Link href="/admin/discounts">
+                                <Button variant="outline">
+                                    <ArrowLeft className="h-4 w-4" />
+                                    Kembali ke Diskon
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+
+                    {discount.applies_to === 'all' ? (
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16 text-center">
+                            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                <Info className="h-6 w-6 text-primary" />
+                            </div>
+                            <p className="text-sm font-medium text-foreground">Diskon ini berlaku untuk semua produk</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Ubah ke "Produk Tertentu" di form edit jika ingin memilih produk spesifik.
+                            </p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Search + actions */}
+                            <div className="flex flex-wrap items-center gap-3">
+                                <div className="relative flex-1 min-w-[200px]">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Cari produk..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="pl-9"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button type="button" variant="outline" size="sm" onClick={selectAll}>Pilih Semua</Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={deselectAll}>Kosongkan</Button>
+                                    <Badge variant="secondary">{data.target_ids.length} terpilih</Badge>
+                                </div>
+                            </div>
+
+                            {/* Product list */}
+                            <div className="max-h-[55vh] space-y-1 overflow-y-auto rounded-xl border border-border bg-card p-2">
+                                {filteredProducts.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                                        <Package className="mb-3 h-8 w-8 opacity-40" />
+                                        <p className="text-sm">Produk tidak ditemukan.</p>
+                                    </div>
+                                ) : (
+                                    filteredProducts.map((p) => {
+                                        const selected = data.target_ids.includes(p.id);
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => toggleProduct(p.id)}
+                                                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                                                    selected ? 'bg-primary/10 text-primary' : 'hover:bg-accent'
+                                                }`}
+                                            >
+                                                <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border ${
+                                                    selected ? 'border-primary bg-primary text-white' : 'border-border'
+                                                }`}>
+                                                    {selected && <Check className="h-3 w-3" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-foreground">{p.name}</div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {p.sku ?? '—'} {p.brand ? `· ${p.brand}` : ''}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })
+                                )}
+                            </div>
+
+                            {/* Submit */}
+                            <div className="flex justify-end gap-2">
+                                <Link href="/admin/discounts">
+                                    <Button type="button" variant="outline">Batal</Button>
+                                </Link>
+                                <Button type="submit" variant="gradient" disabled={processing}>
+                                    {processing ? 'Menyimpan...' : 'Simpan Produk Terpilih'}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            </AdminLayout>
+        </>
+    );
+}
