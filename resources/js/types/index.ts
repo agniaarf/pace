@@ -16,10 +16,25 @@ export interface AppInfo {
     slogan: string;
 }
 
+export interface TransactionReceipt {
+    transaction_number: string;
+    subtotal: number;
+    discount_amount: number;
+    tax_amount: number;
+    total_amount: number;
+    amount_paid: number;
+    change_amount: number;
+    payment_method: string;
+    customer_name: string | null;
+    items: { name: string; quantity: number; unit_price: number; subtotal: number }[];
+    created_at: string;
+}
+
 export interface FlashMessages {
     success?: string | null;
     error?: string | null;
     message?: string | null;
+    transaction?: TransactionReceipt | null;
 }
 
 export interface SharedProps {

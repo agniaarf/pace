@@ -539,3 +539,19 @@
     background-clip: content-box;
 }
 
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    [data-receipt] {
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    [data-receipt] * {
+        visibility: visible;
+    }
+}
+

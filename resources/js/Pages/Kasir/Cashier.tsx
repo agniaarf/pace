@@ -21,6 +21,7 @@ import {
     Minus,
     Package,
     Plus,
+    Printer,
     QrCode,
     Search,
     ShoppingCart,
@@ -30,7 +31,7 @@ import {
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { PageProps } from '@/types';
+import type { PageProps, TransactionReceipt } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface CashierProduct {
@@ -98,7 +99,8 @@ export default function Cashier() {
     const [checkoutStep, setCheckoutStep] = useState<'cart' | 'payment' | 'success' | null>(null);
     const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
     const [cashInput, setCashInput] = useState('');
-    const [txResult, setTxResult] = useState<{ number: string; total: number; change: number } | null>(null);
+    const [txResult, setTxResult] = useState<TransactionReceipt | null>(null);
+    const [showReceipt, setShowReceipt] = useState(false);
 
     const { setData, post, processing, reset } = useForm<{
         items: { product_id: number; quantity: number; unit_price: number }[];
@@ -200,9 +202,27 @@ export default function Cashier() {
             amount_paid: cashAmount || totalAmount,
         });
         post('/kasir/cashier', {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: (page) => {
-                const flash = (page.props.flash as { success?: string });
-                setTxResult({ number: flash.success ?? 'Transaksi selesai', total: totalAmount, change: Math.max(0, change) });
+                const tx = (page.props.flash as { transaction?: TransactionReceipt }).transaction;
+                if (tx) {
+                    setTxResult(tx);
+                } else {
+                    setTxResult({
+                        transaction_number: 'TRX-',
+                        subtotal,
+                        discount_amount: totalDiscount,
+                        tax_amount: taxAmount,
+                        total_amount: totalAmount,
+                        amount_paid: cashAmount || totalAmount,
+                        change_amount: Math.max(0, change),
+                        payment_method: '',
+                        customer_name: selectedCustomer?.full_name ?? null,
+                        items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, unit_price: i.product.selling_price, subtotal: i.product.selling_price * i.quantity })),
+                        created_at: new Date().toISOString(),
+                    });
+                }
                 setCheckoutStep('success');
                 setCart([]);
                 setSelectedCustomer(null);
@@ -416,7 +436,7 @@ export default function Cashier() {
 
             {/* Customer selection modal */}
             <Dialog open={showCustomerModal} onOpenChange={setShowCustomerModal}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Pilih Pelanggan</DialogTitle>
                     </DialogHeader>
@@ -454,7 +474,7 @@ export default function Cashier() {
 
             {/* Payment dialog */}
             <Dialog open={checkoutStep === 'payment'} onOpenChange={(open) => { if (!open) setCheckoutStep(null); }}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Pembayaran</DialogTitle>
                     </DialogHeader>
@@ -566,38 +586,87 @@ export default function Cashier() {
                 </DialogContent>
             </Dialog>
 
-            {/* Success dialog */}
+            {/* Success dialog with receipt */}
             <Dialog open={checkoutStep === 'success'} onOpenChange={(open) => { if (!open) { setCheckoutStep(null); setTxResult(null); } }}>
-                <DialogContent className="sm:max-w-sm">
+                <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
                     <div className="flex flex-col items-center text-center">
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 animate-scale-in">
                             <CheckCircle className="h-8 w-8 text-emerald-500" />
                         </div>
                         <h2 className="mb-1 text-xl font-bold">Transaksi Berhasil!</h2>
-                        <p className="mb-1 text-sm text-muted-foreground">{txResult?.number}</p>
-                        <p className="mb-6 text-sm text-muted-foreground">
-                            Total: <b className="text-foreground">{txResult && formatCurrency(txResult.total)}</b>
-                            {txResult && txResult.change > 0 && ` — Kembalian: ${formatCurrency(txResult.change)}`}
-                        </p>
+                        <p className="mb-4 text-sm text-muted-foreground">{txResult?.transaction_number}</p>
 
-                        {/* Receipt preview */}
-                        <div className="mb-6 w-full rounded-xl border border-border bg-card p-4 text-left">
-                            <div className="mb-3 border-b border-dashed border-border pb-2 text-center text-xs font-semibold text-muted-foreground">
-                                STRUK PACE POS
+                        {/* Receipt */}
+                        <div className="mb-4 w-full rounded-xl border border-border bg-card p-4 text-left" data-receipt>
+                            <div className="mb-3 border-b border-dashed border-border pb-2 text-center">
+                                <p className="text-sm font-bold text-foreground">PACE POS</p>
+                                <p className="text-xs text-muted-foreground">{txResult && new Date(txResult.created_at).toLocaleString('id-ID')}</p>
                             </div>
-                            <div className="space-y-1">
-                                {cart.length === 0 && txResult && (
-                                    <p className="text-center text-xs text-muted-foreground">Item telah dikosongkan.</p>
+
+                            {txResult?.customer_name && (
+                                <div className="mb-2 text-xs text-muted-foreground">
+                                    Pelanggan: <span className="font-medium text-foreground">{txResult.customer_name}</span>
+                                </div>
+                            )}
+
+                            <div className="mb-2 max-h-40 space-y-1 overflow-y-auto">
+                                {txResult?.items.map((item, idx) => (
+                                    <div key={idx} className="text-xs">
+                                        <div className="flex justify-between">
+                                            <span className="font-medium text-foreground">{item.name}</span>
+                                            <span className="font-mono">{formatCurrency(item.subtotal)}</span>
+                                        </div>
+                                        <div className="text-muted-foreground">
+                                            {item.quantity} x {formatCurrency(item.unit_price)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="space-y-1 border-t border-dashed border-border pt-2 text-xs">
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Subtotal</span>
+                                    <span className="font-mono">{txResult && formatCurrency(txResult.subtotal)}</span>
+                                </div>
+                                {txResult && txResult.discount_amount > 0 && (
+                                    <div className="flex justify-between text-emerald-600">
+                                        <span>Diskon</span>
+                                        <span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Pajak (11%)</span>
+                                    <span className="font-mono">{txResult && formatCurrency(txResult.tax_amount)}</span>
+                                </div>
+                                <div className="flex justify-between border-t border-border pt-1 text-sm font-bold">
+                                    <span>Total</span>
+                                    <span className="font-mono text-primary">{txResult && formatCurrency(txResult.total_amount)}</span>
+                                </div>
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Bayar ({txResult?.payment_method})</span>
+                                    <span className="font-mono">{txResult && formatCurrency(txResult.amount_paid)}</span>
+                                </div>
+                                {txResult && txResult.change_amount > 0 && (
+                                    <div className="flex justify-between font-semibold text-emerald-600">
+                                        <span>Kembalian</span>
+                                        <span className="font-mono">{formatCurrency(txResult.change_amount)}</span>
+                                    </div>
                                 )}
                             </div>
+
                             <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">
                                 Terima kasih telah berbelanja! 🛍️
                             </div>
                         </div>
 
-                        <Button variant="gradient" className="w-full justify-center" onClick={() => { setCheckoutStep(null); setTxResult(null); }}>
-                            <Check className="h-4 w-4" />Transaksi Baru
-                        </Button>
+                        <div className="flex w-full gap-2">
+                            <Button variant="outline" className="flex-1 justify-center" onClick={() => window.print()}>
+                                <Printer className="h-4 w-4" />Cetak
+                            </Button>
+                            <Button variant="gradient" className="flex-1 justify-center" onClick={() => { setCheckoutStep(null); setTxResult(null); }}>
+                                <Check className="h-4 w-4" />Selesai
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>

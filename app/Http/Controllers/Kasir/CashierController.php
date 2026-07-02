@@ -178,7 +178,29 @@ class CashierController extends Controller
                 $customer->increment('total_spent', $totalAmount);
             }
 
-            return redirect()->route('kasir.dashboard')->with('success', "Transaksi {$txNumber} berhasil diselesaikan.");
+            $transaction->load('items.product');
+
+            $paymentMethodLabel = AppMaster::where('id', $validated['payment_method_id'])->value('label') ?? 'Tunai';
+            $customerName = $validated['customer_id'] ? Customer::where('id', $validated['customer_id'])->value('full_name') : null;
+
+            return back()->with('success', "Transaksi {$txNumber} berhasil diselesaikan.")->with('transaction', [
+                'transaction_number' => $transaction->transaction_number,
+                'subtotal' => (float) $transaction->subtotal,
+                'discount_amount' => (float) $transaction->discount_amount,
+                'tax_amount' => (float) $transaction->tax_amount,
+                'total_amount' => (float) $transaction->total_amount,
+                'amount_paid' => (float) $transaction->amount_paid,
+                'change_amount' => (float) $transaction->change_amount,
+                'payment_method' => $paymentMethodLabel,
+                'customer_name' => $customerName,
+                'items' => $transaction->items->map(fn ($item) => [
+                    'name' => $item->product->name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => (float) $item->unit_price,
+                    'subtotal' => (float) $item->subtotal,
+                ]),
+                'created_at' => $transaction->created_at->toDateTimeString(),
+            ]);
         });
     }
 }
