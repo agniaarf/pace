@@ -21,7 +21,7 @@ import { Switch } from '@/Components/ui/switch';
 import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Edit, Package, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -128,7 +128,8 @@ export default function ProductsIndex() {
 
     const handleDelete = () => {
         if (deleteId) {
-            useForm({}).delete(`/admin/products/${deleteId}`, {
+            router.delete(`/admin/products/${deleteId}`, {
+                preserveScroll: true,
                 onSuccess: () => setDeleteId(null),
             });
         }

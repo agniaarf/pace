@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/Components/ui/textarea';
 import { Pagination } from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Edit, FolderTree, Plus, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PaginatedResponse, PageProps } from '@/types';
@@ -79,7 +79,7 @@ export default function CategoriesIndex() {
 
     const handleDelete = () => {
         if (deleteId) {
-            useForm({}).delete(`/admin/categories/${deleteId}`, { onSuccess: () => setDeleteId(null) });
+            router.delete(`/admin/categories/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) });
         }
     };
 

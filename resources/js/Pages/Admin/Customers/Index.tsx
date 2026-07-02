@@ -20,7 +20,7 @@ import {
 import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Edit, Plus, Trash2, Users } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -91,7 +91,7 @@ export default function CustomersIndex() {
     };
 
     const handleDelete = () => {
-        if (deleteId) { useForm({}).delete(`/admin/customers/${deleteId}`, { onSuccess: () => setDeleteId(null) }); }
+        if (deleteId) { router.delete(`/admin/customers/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
     };
 
     const columns: Column<Customer>[] = [

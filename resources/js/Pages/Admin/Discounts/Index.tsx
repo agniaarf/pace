@@ -20,7 +20,7 @@ import {
 import { DataTable, type Column } from '@/Components/DataTable';
 import { DatePicker } from '@/Components/ui/calendar';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Check, Edit, Percent, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -98,7 +98,7 @@ export default function DiscountsIndex() {
     };
 
     const handleDelete = () => {
-        if (deleteId) { useForm({}).delete(`/admin/discounts/${deleteId}`, { onSuccess: () => setDeleteId(null) }); }
+        if (deleteId) { router.delete(`/admin/discounts/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
     };
 
     const formatDiscountValue = (d: Discount) => {
