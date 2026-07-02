@@ -274,8 +274,8 @@ export default function ProductsIndex() {
                                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="sku">SKU</Label>
-                                <Input id="sku" value={data.sku} onChange={(e) => setData('sku', e.target.value)} placeholder="e.g. NZ-001" />
+                                <Label htmlFor="sku">SKU (Opsional)</Label>
+                                <Input id="sku" value={data.sku} onChange={(e) => setData('sku', e.target.value)} placeholder="Auto-generate jika dikosongkan" />
                                 {errors.sku && <p className="text-xs text-destructive">{errors.sku}</p>}
                             </div>
                             <div className="space-y-2">

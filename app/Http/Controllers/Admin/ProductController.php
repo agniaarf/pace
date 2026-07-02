@@ -50,6 +50,12 @@ class ProductController extends Controller
         ];
         unset($validated['stock_quantity'], $validated['minimum_quantity']);
 
+        if (empty($validated['sku'])) {
+            do {
+                $validated['sku'] = 'PRD-' . str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            } while (Product::where('sku', $validated['sku'])->exists());
+        }
+
         $product = Product::create($validated);
         $product->stock()->create($stockData);
 
