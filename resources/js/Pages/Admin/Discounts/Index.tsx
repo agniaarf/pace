@@ -20,7 +20,7 @@ import {
 import { DataTable, type Column } from '@/Components/DataTable';
 import { DatePicker } from '@/Components/ui/calendar';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Check, Edit, Percent, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -59,6 +59,7 @@ export default function DiscountsIndex() {
     const [productPickerOpen, setProductPickerOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
 
+    const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
         type: 'percentage' as 'percentage' | 'nominal',
@@ -98,7 +99,7 @@ export default function DiscountsIndex() {
     };
 
     const handleDelete = () => {
-        if (deleteId) { router.delete(`/admin/discounts/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
+        if (deleteId) { deleteForm.delete(`/admin/discounts/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
     };
 
     const formatDiscountValue = (d: Discount) => {
@@ -379,8 +380,8 @@ export default function DiscountsIndex() {
                         <DialogDescription>Tindakan ini tidak dapat dibatalkan.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
+                        <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button type="button" variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

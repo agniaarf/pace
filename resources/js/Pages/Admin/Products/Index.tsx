@@ -21,7 +21,7 @@ import { Switch } from '@/Components/ui/switch';
 import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Package, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -56,6 +56,7 @@ export default function ProductsIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
+    const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm<{
         category_id: string;
         name: string;
@@ -128,7 +129,7 @@ export default function ProductsIndex() {
 
     const handleDelete = () => {
         if (deleteId) {
-            router.delete(`/admin/products/${deleteId}`, {
+            deleteForm.delete(`/admin/products/${deleteId}`, {
                 preserveScroll: true,
                 onSuccess: () => setDeleteId(null),
             });
@@ -343,8 +344,8 @@ export default function ProductsIndex() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
+                        <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button type="button" variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

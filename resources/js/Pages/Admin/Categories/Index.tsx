@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/Components/ui/textarea';
 import { Pagination } from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Edit, FolderTree, Plus, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PaginatedResponse, PageProps } from '@/types';
@@ -42,6 +42,7 @@ export default function CategoriesIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [search, setSearch] = useState(filters.search ?? '');
 
+    const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm({
         code: '',
         name: '',
@@ -79,7 +80,7 @@ export default function CategoriesIndex() {
 
     const handleDelete = () => {
         if (deleteId) {
-            router.delete(`/admin/categories/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) });
+            deleteForm.delete(`/admin/categories/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) });
         }
     };
 
@@ -198,8 +199,8 @@ export default function CategoriesIndex() {
                         <DialogDescription>Tindakan ini tidak dapat dibatalkan. Kategori dengan produk yang ada tidak dapat dihapus.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
+                        <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button type="button" variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

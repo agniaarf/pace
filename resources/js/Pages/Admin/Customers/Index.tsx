@@ -20,7 +20,7 @@ import {
 import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Edit, Plus, Trash2, Users } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import type { PageProps } from '@/types';
@@ -49,6 +49,7 @@ export default function CustomersIndex() {
     const [editing, setEditing] = useState<Customer | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
+    const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm({
         member_code: '',
         full_name: '',
@@ -91,7 +92,7 @@ export default function CustomersIndex() {
     };
 
     const handleDelete = () => {
-        if (deleteId) { router.delete(`/admin/customers/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
+        if (deleteId) { deleteForm.delete(`/admin/customers/${deleteId}`, { preserveScroll: true, onSuccess: () => setDeleteId(null) }); }
     };
 
     const columns: Column<Customer>[] = [
@@ -246,8 +247,8 @@ export default function CustomersIndex() {
                         <DialogDescription>Tindakan ini tidak dapat dibatalkan.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
-                        <Button variant="destructive" onClick={handleDelete}>Hapus</Button>
+                        <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
+                        <Button type="button" variant="destructive" onClick={handleDelete}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
