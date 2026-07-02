@@ -339,7 +339,7 @@ export default function DiscountsIndex() {
             </Dialog>
 
             {/* Product Picker Dialog */}
-            <Dialog open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+            <Dialog open={productPickerOpen} onOpenChange={setProductPickerOpen} modal={false}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Pilih Produk</DialogTitle>
