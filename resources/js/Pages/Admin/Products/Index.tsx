@@ -22,8 +22,8 @@ import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Edit, Package, Plus, Trash2, X } from 'lucide-react';
-import { FormEventHandler, useEffect, useMemo, useState } from 'react';
+import { Edit, Package, Plus, Trash2 } from 'lucide-react';
+import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -39,8 +39,6 @@ interface Product {
     cost_price: string;
     selling_price: string;
     description: string | null;
-    photo: string | null;
-    photo_url: string | null;
     status: 'active' | 'inactive';
     category?: Category | null;
     stock?: Stock | null;
@@ -58,8 +56,7 @@ export default function ProductsIndex() {
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-    const { data, setData, post, processing, errors, reset, transform } = useForm<{
-        _method: string;
+    const { data, setData, post, put, processing, errors, reset } = useForm<{
         category_id: string;
         name: string;
         sku: string;
@@ -68,12 +65,10 @@ export default function ProductsIndex() {
         cost_price: string;
         selling_price: string;
         description: string;
-        photo: File | null;
         status: 'active' | 'inactive';
         stock_quantity: string;
         minimum_quantity: string;
     }>({
-        _method: 'POST',
         category_id: '',
         name: '',
         sku: '',
@@ -82,33 +77,20 @@ export default function ProductsIndex() {
         cost_price: '',
         selling_price: '',
         description: '',
-        photo: null,
         status: 'active',
         stock_quantity: '',
         minimum_quantity: '',
     });
-    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
-    useEffect(() => {
-        transform((formData) => {
-            const transformed = { ...formData };
-            if (!transformed.photo) delete transformed.photo;
-            return transformed;
-        });
-    }, [transform]);
 
     const openCreate = () => {
         setEditingProduct(null);
         reset();
-        setData('_method', 'POST');
-        setPhotoPreview(null);
         setDialogOpen(true);
     };
 
     const openEdit = (product: Product) => {
         setEditingProduct(product);
         setData({
-            _method: 'PUT',
             category_id: product.category_id?.toString() ?? '',
             name: product.name,
             sku: product.sku ?? '',
@@ -117,42 +99,26 @@ export default function ProductsIndex() {
             cost_price: product.cost_price,
             selling_price: product.selling_price,
             description: product.description ?? '',
-            photo: null,
             status: product.status,
             stock_quantity: '',
             minimum_quantity: '',
         });
-        setPhotoPreview(product.photo_url ?? null);
         setDialogOpen(true);
     };
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         if (editingProduct) {
-            post(`/admin/products/${editingProduct.id}`, {
-                forceFormData: true,
+            put(`/admin/products/${editingProduct.id}`, {
                 preserveScroll: true,
-                onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
+                onSuccess: () => { setDialogOpen(false); reset(); },
             });
         } else {
             post('/admin/products', {
-                forceFormData: true,
                 preserveScroll: true,
-                onSuccess: () => { setDialogOpen(false); reset(); setPhotoPreview(null); },
+                onSuccess: () => { setDialogOpen(false); reset(); },
             });
         }
-    };
-
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB');
-            e.target.value = '';
-            return;
-        }
-        setData('photo', file);
-        setPhotoPreview(URL.createObjectURL(file));
     };
 
     const filteredProducts = useMemo(() => {
@@ -173,18 +139,9 @@ export default function ProductsIndex() {
             key: 'name',
             header: 'Nama',
             render: (p) => (
-                <div className="flex items-center gap-3">
-                    {p.photo_url ? (
-                        <img src={p.photo_url} alt={p.name} className="h-10 w-10 rounded-lg object-cover" />
-                    ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                    )}
-                    <div className="flex flex-col">
-                        <span className="font-medium">{p.name}</span>
-                        {p.brand && <span className="text-xs text-muted-foreground">{p.brand}</span>}
-                    </div>
+                <div className="flex flex-col">
+                    <span className="font-medium">{p.name}</span>
+                    {p.brand && <span className="text-xs text-muted-foreground">{p.brand}</span>}
                 </div>
             ),
         },
@@ -356,46 +313,6 @@ export default function ProductsIndex() {
                         <div className="space-y-2">
                             <Label htmlFor="description">Deskripsi</Label>
                             <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} placeholder="Deskripsi produk..." rows={3} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Foto Produk</Label>
-                            <div className="flex items-center gap-4">
-                                {photoPreview ? (
-                                    <div className="relative">
-                                        <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-xl object-cover border border-border" />
-                                        <button
-                                            type="button"
-                                            onClick={() => { setPhotoPreview(null); setData('photo', null); }}
-                                            className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-md transition hover:scale-110"
-                                        >
-                                            <X className="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <label
-                                        htmlFor="photo"
-                                        className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 transition hover:border-primary hover:bg-accent"
-                                    >
-                                        <Package className="h-6 w-6 text-muted-foreground" />
-                                        <span className="mt-1 text-[10px] text-muted-foreground">Upload</span>
-                                    </label>
-                                )}
-                                <div className="flex-1">
-                                    <input
-                                        id="photo"
-                                        type="file"
-                                        accept="image/jpeg,image/png"
-                                        onChange={handlePhotoChange}
-                                        className="hidden"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Format: JPG, PNG. Maksimal 2MB.
-                                        {editingProduct?.photo && !data.photo && ' Kosongkan jika tidak ingin mengubah foto.'}
-                                    </p>
-                                    {errors.photo && <p className="text-xs text-destructive">{errors.photo}</p>}
-                                </div>
-                            </div>
                         </div>
 
                         <div className="flex items-center gap-3">

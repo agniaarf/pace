@@ -8,9 +8,7 @@ use App\Models\Product;
 use App\Models\Stock;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Intervention\Image\ImageManager;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,10 +18,7 @@ class ProductController extends Controller
     {
         $products = Product::with(['category', 'stock'])
             ->latest()
-            ->get()
-            ->map(fn ($p) => array_merge($p->toArray(), [
-                'photo_url' => $p->photo ? Storage::disk('public')->url("products/{$p->photo}") : null,
-            ]));
+            ->get();
 
         $categories = Category::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
@@ -79,18 +74,8 @@ class ProductController extends Controller
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
-
-        if ($request->hasFile('photo')) {
-            if ($product->photo) {
-                Storage::disk('public')->delete("products/{$product->photo}");
-            }
-            $validated['photo'] = $this->convertAndStorePhoto($request->file('photo'));
-        } else {
-            unset($validated['photo']);
-        }
 
         $product->update($validated);
 
@@ -99,29 +84,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->photo) {
-            Storage::disk('public')->delete("products/{$product->photo}");
-        }
-
         $product->delete();
 
         return back()->with('success', 'Product deleted successfully.');
-    }
-
-    private function convertAndStorePhoto($file): string
-    {
-        $manager = new ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
-        $image = $manager->read($file->getRealPath());
-
-        $filename = uniqid('prod_', true) . '.webp';
-        $path = storage_path("app/public/products/{$filename}");
-
-        if (!is_dir(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
-        }
-
-        $image->toWebp(85)->save($path);
-
-        return $filename;
     }
 }
