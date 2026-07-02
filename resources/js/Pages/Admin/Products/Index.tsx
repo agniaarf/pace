@@ -223,6 +223,7 @@ export default function ProductsIndex() {
                         emptyIcon={Package}
                         emptyMessage="Produk tidak ditemukan. Klik 'Tambah Produk' untuk membuat baru."
                         rowKey={(p) => p.id}
+                        showRowNumber
                         toolbarRight={
                             <Button variant="gradient" onClick={openCreate}>
                                 <Plus className="h-4 w-4" />

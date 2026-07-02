@@ -65,6 +65,7 @@ export default function TransactionShow() {
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
+                                                <TableHead className="w-16">No.</TableHead>
                                                 <TableHead>Produk</TableHead>
                                                 <TableHead>Jumlah</TableHead>
                                                 <TableHead>Harga Satuan</TableHead>
@@ -73,8 +74,9 @@ export default function TransactionShow() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {transaction.items.map((item) => (
+                                            {transaction.items.map((item, idx) => (
                                                 <TableRow key={item.id}>
+                                                    <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                                                     <TableCell className="font-medium">
                                                         {item.product.name}
                                                         {item.product.sku && (

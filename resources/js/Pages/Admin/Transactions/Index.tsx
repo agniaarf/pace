@@ -97,6 +97,7 @@ export default function TransactionsIndex() {
                         emptyIcon={Receipt}
                         emptyMessage="Tidak ada transaksi ditemukan."
                         rowKey={(t) => t.id}
+                        showRowNumber
                     />
                 </div>
             </AdminLayout>

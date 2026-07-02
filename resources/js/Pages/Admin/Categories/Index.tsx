@@ -109,6 +109,7 @@ export default function CategoriesIndex() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-16">No.</TableHead>
                                     <TableHead>Kode</TableHead>
                                     <TableHead>Nama</TableHead>
                                     <TableHead>Deskripsi</TableHead>
@@ -120,14 +121,15 @@ export default function CategoriesIndex() {
                             <TableBody>
                                 {categories.data.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                                        <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                                             <FolderTree className="mx-auto mb-3 h-10 w-10 opacity-40" />
                                             Tidak ada kategori ditemukan.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    categories.data.map((cat) => (
+                                    categories.data.map((cat, idx) => (
                                         <TableRow key={cat.id}>
+                                            <TableCell className="text-muted-foreground">{(categories.current_page - 1) * categories.per_page + idx + 1}</TableCell>
                                             <TableCell className="font-mono text-xs">{cat.code}</TableCell>
                                             <TableCell className="font-medium">{cat.name}</TableCell>
                                             <TableCell className="text-muted-foreground">{cat.description ?? '—'}</TableCell>

@@ -204,6 +204,7 @@ export default function DiscountsIndex() {
                         emptyIcon={Percent}
                         emptyMessage="Tidak ada diskon ditemukan."
                         rowKey={(d) => d.id}
+                        showRowNumber
                         toolbarRight={
                             <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Tambah Diskon</Button>
                         }

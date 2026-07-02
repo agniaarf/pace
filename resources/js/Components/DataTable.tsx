@@ -25,6 +25,7 @@ interface DataTableProps<T> {
     rowKey?: (row: T) => string | number;
     perPageOptions?: number[];
     initialPerPage?: number;
+    showRowNumber?: boolean;
 }
 
 export function DataTable<T>({
@@ -40,6 +41,7 @@ export function DataTable<T>({
     rowKey,
     perPageOptions = [10, 25, 50, 100],
     initialPerPage = 10,
+    showRowNumber = false,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -132,6 +134,7 @@ export function DataTable<T>({
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            {showRowNumber && <TableHead className="w-16">No.</TableHead>}
                             {columns.map((col) => (
                                 <TableHead key={col.key} className={col.headerClassName}>
                                     {col.header}
@@ -142,7 +145,7 @@ export function DataTable<T>({
                     <TableBody>
                         {pageData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={columns.length} className="py-12 text-center text-muted-foreground">
+                                <TableCell colSpan={columns.length + (showRowNumber ? 1 : 0)} className="py-12 text-center text-muted-foreground">
                                     {EmptyIcon && <EmptyIcon className="mx-auto mb-3 h-10 w-10 opacity-40" />}
                                     {emptyMessage}
                                 </TableCell>
@@ -150,6 +153,7 @@ export function DataTable<T>({
                         ) : (
                             pageData.map((row, idx) => (
                                 <TableRow key={rowKey ? rowKey(row) : idx} className="animate-fade-in">
+                                    {showRowNumber && <TableCell className="text-muted-foreground">{(safePage - 1) * perPage + idx + 1}</TableCell>}
                                     {columns.map((col) => (
                                         <TableCell key={col.key} className={col.className}>
                                             {col.render(row)}

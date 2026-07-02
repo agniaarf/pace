@@ -163,6 +163,7 @@ export default function CustomersIndex() {
                         emptyIcon={Users}
                         emptyMessage="Tidak ada pelanggan ditemukan."
                         rowKey={(c) => c.id}
+                        showRowNumber
                         toolbarRight={
                             <Button variant="gradient" onClick={openCreate}><Plus className="h-4 w-4" />Tambah Pelanggan</Button>
                         }

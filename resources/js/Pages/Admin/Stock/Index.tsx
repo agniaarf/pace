@@ -109,6 +109,7 @@ export default function StockIndex() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-16">No.</TableHead>
                                     <TableHead>Produk</TableHead>
                                     <TableHead>SKU</TableHead>
                                     <TableHead>Kategori</TableHead>
@@ -121,14 +122,15 @@ export default function StockIndex() {
                             <TableBody>
                                 {stocks.data.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
+                                        <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
                                             <Boxes className="mx-auto mb-3 h-10 w-10 opacity-40" />
                                             Tidak ada data stok ditemukan.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    stocks.data.map((stock) => (
+                                    stocks.data.map((stock, idx) => (
                                         <TableRow key={stock.id}>
+                                            <TableCell className="text-muted-foreground">{(stocks.current_page - 1) * stocks.per_page + idx + 1}</TableCell>
                                             <TableCell className="font-medium">{stock.product.name}</TableCell>
                                             <TableCell className="font-mono text-xs text-muted-foreground">{stock.product.sku ?? '—'}</TableCell>
                                             <TableCell>{stock.product.category?.name ?? '—'}</TableCell>
