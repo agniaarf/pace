@@ -30,12 +30,12 @@ class DummyDataSeeder extends Seeder
     private function seedCategories(): array
     {
         $categories = [
-            ['code' => 'running-shoes', 'name' => 'Running Shoes', 'description' => 'Performance running footwear for all terrains', 'sort' => 1],
-            ['code' => 'apparel', 'name' => 'Sports Apparel', 'description' => 'Athletic clothing for men and women', 'sort' => 2],
-            ['code' => 'accessories', 'name' => 'Accessories', 'description' => 'Sports accessories and gear', 'sort' => 3],
-            ['code' => 'equipment', 'name' => 'Equipment', 'description' => 'Training and competition equipment', 'sort' => 4],
-            ['code' => 'nutrition', 'name' => 'Nutrition', 'description' => 'Sports nutrition and supplements', 'sort' => 5],
-            ['code' => 'fitness', 'name' => 'Fitness Gear', 'description' => 'Gym and fitness equipment', 'sort' => 6],
+            ['code' => 'sepatu-lari', 'name' => 'Sepatu Lari', 'description' => 'Sepatu lari performa tinggi untuk segala medan', 'sort' => 1],
+            ['code' => 'pakaian-olahraga', 'name' => 'Pakaian Olahraga', 'description' => 'Pakaian olahraga untuk pria dan wanita', 'sort' => 2],
+            ['code' => 'aksesoris', 'name' => 'Aksesoris', 'description' => 'Aksesoris dan perlengkapan olahraga', 'sort' => 3],
+            ['code' => 'perlengkapan', 'name' => 'Perlengkapan', 'description' => 'Perlengkapan latihan dan kompetisi', 'sort' => 4],
+            ['code' => 'nutrisi', 'name' => 'Nutrisi & Suplemen', 'description' => 'Nutrisi dan suplemen olahraga', 'sort' => 5],
+            ['code' => 'fitness', 'name' => 'Peralatan Fitness', 'description' => 'Peralatan gym dan fitness', 'sort' => 6],
         ];
 
         $result = [];
@@ -58,7 +58,7 @@ class DummyDataSeeder extends Seeder
     {
         $discounts = [
             [
-                'name' => 'Grand Opening 20% Off',
+                'name' => 'Grand Opening Diskon 20%',
                 'type' => 'percentage',
                 'value' => 20,
                 'applies_to' => 'all',
@@ -67,20 +67,20 @@ class DummyDataSeeder extends Seeder
                 'end_date' => now()->addDays(60),
             ],
             [
-                'name' => 'Running Shoes Promo 15%',
+                'name' => 'Promo Sepatu Lari 15%',
                 'type' => 'percentage',
                 'value' => 15,
-                'applies_to' => 'category',
-                'target_ids' => [$categories['running-shoes']->id],
+                'applies_to' => 'product',
+                'target_ids' => [$categories['sepatu-lari']->id],
                 'start_date' => now()->subDays(14),
                 'end_date' => now()->addDays(30),
             ],
             [
-                'name' => 'Nutrition Flash Sale',
+                'name' => 'Flash Sale Nutrisi',
                 'type' => 'nominal',
                 'value' => 25000,
-                'applies_to' => 'category',
-                'target_ids' => [$categories['nutrition']->id],
+                'applies_to' => 'product',
+                'target_ids' => [$categories['nutrisi']->id],
                 'start_date' => now()->subDays(7),
                 'end_date' => now()->addDays(7),
             ],
@@ -101,40 +101,40 @@ class DummyDataSeeder extends Seeder
     private function seedProducts(array $categories, array $discounts): array
     {
         $products = [
-            // Running Shoes
-            ['name' => 'Nike Air Zoom Pegasus 40', 'category' => 'running-shoes', 'sku' => 'NK-PG40-001', 'brand' => 'Nike', 'size' => '42', 'cost' => 850000, 'price' => 1499000, 'stock' => 24, 'min' => 5],
-            ['name' => 'Adidas Adizero Adios Pro 3', 'category' => 'running-shoes', 'sku' => 'AD-AP3-002', 'brand' => 'Adidas', 'size' => '41', 'cost' => 1200000, 'price' => 2299000, 'stock' => 12, 'min' => 5],
-            ['name' => 'Asics Gel-Kayano 30', 'category' => 'running-shoes', 'sku' => 'AS-GK30-003', 'brand' => 'ASICS', 'size' => '43', 'cost' => 950000, 'price' => 1799000, 'stock' => 3, 'min' => 5],
-            ['name' => 'Hoka Clifton 9', 'category' => 'running-shoes', 'sku' => 'HK-CL9-004', 'brand' => 'Hoka', 'size' => '42', 'cost' => 900000, 'price' => 1699000, 'stock' => 8, 'min' => 5],
-            ['name' => 'Brooks Ghost 16', 'category' => 'running-shoes', 'sku' => 'BR-G16-005', 'brand' => 'Brooks', 'size' => '40', 'cost' => 800000, 'price' => 1499000, 'stock' => 0, 'min' => 5],
+            // Sepatu Lari
+            ['name' => 'Nike Air Zoom Pegasus 40', 'category' => 'sepatu-lari', 'sku' => 'NK-PG40-001', 'brand' => 'Nike', 'size' => '42', 'cost' => 850000, 'price' => 1499000, 'stock' => 24, 'min' => 5],
+            ['name' => 'Adidas Adizero Adios Pro 3', 'category' => 'sepatu-lari', 'sku' => 'AD-AP3-002', 'brand' => 'Adidas', 'size' => '41', 'cost' => 1200000, 'price' => 2299000, 'stock' => 12, 'min' => 5],
+            ['name' => 'Asics Gel-Kayano 30', 'category' => 'sepatu-lari', 'sku' => 'AS-GK30-003', 'brand' => 'ASICS', 'size' => '43', 'cost' => 950000, 'price' => 1799000, 'stock' => 3, 'min' => 5],
+            ['name' => 'Hoka Clifton 9', 'category' => 'sepatu-lari', 'sku' => 'HK-CL9-004', 'brand' => 'Hoka', 'size' => '42', 'cost' => 900000, 'price' => 1699000, 'stock' => 8, 'min' => 5],
+            ['name' => 'Brooks Ghost 16', 'category' => 'sepatu-lari', 'sku' => 'BR-G16-005', 'brand' => 'Brooks', 'size' => '40', 'cost' => 800000, 'price' => 1499000, 'stock' => 0, 'min' => 5],
 
-            // Apparel
-            ['name' => 'Nike Dri-FIT Running Shirt', 'category' => 'apparel', 'sku' => 'NK-DFR-010', 'brand' => 'Nike', 'size' => 'L', 'cost' => 150000, 'price' => 349000, 'stock' => 45, 'min' => 10],
-            ['name' => 'Under Armour HeatGear Leggings', 'category' => 'apparel', 'sku' => 'UA-HGL-011', 'brand' => 'Under Armour', 'size' => 'M', 'cost' => 200000, 'price' => 499000, 'stock' => 30, 'min' => 10],
-            ['name' => 'Adidas Tiro Track Jacket', 'category' => 'apparel', 'sku' => 'AD-TJ-012', 'brand' => 'Adidas', 'size' => 'XL', 'cost' => 350000, 'price' => 749000, 'stock' => 18, 'min' => 8],
-            ['name' => 'Puma Running Shorts', 'category' => 'apparel', 'sku' => 'PU-RS-013', 'brand' => 'Puma', 'size' => 'M', 'cost' => 120000, 'price' => 299000, 'stock' => 4, 'min' => 10],
-            ['name' => 'Lululemon Align Tank Top', 'category' => 'apparel', 'sku' => 'LL-AT-014', 'brand' => 'Lululemon', 'size' => 'S', 'cost' => 250000, 'price' => 599000, 'stock' => 22, 'min' => 8],
+            // Pakaian Olahraga
+            ['name' => 'Nike Dri-FIT Running Shirt', 'category' => 'pakaian-olahraga', 'sku' => 'NK-DFR-010', 'brand' => 'Nike', 'size' => 'L', 'cost' => 150000, 'price' => 349000, 'stock' => 45, 'min' => 10],
+            ['name' => 'Under Armour HeatGear Leggings', 'category' => 'pakaian-olahraga', 'sku' => 'UA-HGL-011', 'brand' => 'Under Armour', 'size' => 'M', 'cost' => 200000, 'price' => 499000, 'stock' => 30, 'min' => 10],
+            ['name' => 'Adidas Tiro Track Jacket', 'category' => 'pakaian-olahraga', 'sku' => 'AD-TJ-012', 'brand' => 'Adidas', 'size' => 'XL', 'cost' => 350000, 'price' => 749000, 'stock' => 18, 'min' => 8],
+            ['name' => 'Puma Running Shorts', 'category' => 'pakaian-olahraga', 'sku' => 'PU-RS-013', 'brand' => 'Puma', 'size' => 'M', 'cost' => 120000, 'price' => 299000, 'stock' => 4, 'min' => 10],
+            ['name' => 'Lululemon Align Tank Top', 'category' => 'pakaian-olahraga', 'sku' => 'LL-AT-014', 'brand' => 'Lululemon', 'size' => 'S', 'cost' => 250000, 'price' => 599000, 'stock' => 22, 'min' => 8],
 
-            // Accessories
-            ['name' => 'Apple Watch Ultra 2', 'category' => 'accessories', 'sku' => 'AP-WU2-020', 'brand' => 'Apple', 'size' => '49mm', 'cost' => 7000000, 'price' => 10999000, 'stock' => 6, 'min' => 3],
-            ['name' => 'Garmin Forerunner 965', 'category' => 'accessories', 'sku' => 'GR-FR965-021', 'brand' => 'Garmin', 'size' => '47mm', 'cost' => 5000000, 'price' => 8499000, 'stock' => 9, 'min' => 3],
-            ['name' => 'Nike Running Cap', 'category' => 'accessories', 'sku' => 'NK-RC-022', 'brand' => 'Nike', 'size' => 'One Size', 'cost' => 80000, 'price' => 199000, 'stock' => 50, 'min' => 15],
-            ['name' => 'Hydro Flask Water Bottle 32oz', 'category' => 'accessories', 'sku' => 'HF-WB32-023', 'brand' => 'Hydro Flask', 'size' => '32oz', 'cost' => 180000, 'price' => 449000, 'stock' => 35, 'min' => 10],
-            ['name' => 'Buff Multifunctional Headwear', 'category' => 'accessories', 'sku' => 'BF-MH-024', 'brand' => 'Buff', 'size' => 'One Size', 'cost' => 90000, 'price' => 229000, 'stock' => 2, 'min' => 10],
+            // Aksesoris
+            ['name' => 'Apple Watch Ultra 2', 'category' => 'aksesoris', 'sku' => 'AP-WU2-020', 'brand' => 'Apple', 'size' => '49mm', 'cost' => 7000000, 'price' => 10999000, 'stock' => 6, 'min' => 3],
+            ['name' => 'Garmin Forerunner 965', 'category' => 'aksesoris', 'sku' => 'GR-FR965-021', 'brand' => 'Garmin', 'size' => '47mm', 'cost' => 5000000, 'price' => 8499000, 'stock' => 9, 'min' => 3],
+            ['name' => 'Nike Running Cap', 'category' => 'aksesoris', 'sku' => 'NK-RC-022', 'brand' => 'Nike', 'size' => 'One Size', 'cost' => 80000, 'price' => 199000, 'stock' => 50, 'min' => 15],
+            ['name' => 'Hydro Flask Water Bottle 32oz', 'category' => 'aksesoris', 'sku' => 'HF-WB32-023', 'brand' => 'Hydro Flask', 'size' => '32oz', 'cost' => 180000, 'price' => 449000, 'stock' => 35, 'min' => 10],
+            ['name' => 'Buff Multifunctional Headwear', 'category' => 'aksesoris', 'sku' => 'BF-MH-024', 'brand' => 'Buff', 'size' => 'One Size', 'cost' => 90000, 'price' => 229000, 'stock' => 2, 'min' => 10],
 
-            // Equipment
-            ['name' => 'Wilson Pro Staff Tennis Racket', 'category' => 'equipment', 'sku' => 'WL-PS-030', 'brand' => 'Wilson', 'size' => '98 sq in', 'cost' => 1500000, 'price' => 2999000, 'stock' => 7, 'min' => 3],
-            ['name' => 'Spalding NBA Official Basketball', 'category' => 'equipment', 'sku' => 'SP-NBA-031', 'brand' => 'Spalding', 'size' => 'Size 7', 'cost' => 300000, 'price' => 699000, 'stock' => 20, 'min' => 5],
-            ['name' => 'Yonex Astrox 88 Badminton Racket', 'category' => 'equipment', 'sku' => 'YX-AX88-032', 'brand' => 'Yonex', 'size' => '4U G5', 'cost' => 900000, 'price' => 1899000, 'stock' => 11, 'min' => 5],
-            ['name' => 'Mikasa Volleyball MVA200', 'category' => 'equipment', 'sku' => 'MK-MVA200-033', 'brand' => 'Mikasa', 'size' => 'Size 5', 'cost' => 350000, 'price' => 799000, 'stock' => 14, 'min' => 5],
+            // Perlengkapan
+            ['name' => 'Wilson Pro Staff Tennis Racket', 'category' => 'perlengkapan', 'sku' => 'WL-PS-030', 'brand' => 'Wilson', 'size' => '98 sq in', 'cost' => 1500000, 'price' => 2999000, 'stock' => 7, 'min' => 3],
+            ['name' => 'Spalding NBA Official Basketball', 'category' => 'perlengkapan', 'sku' => 'SP-NBA-031', 'brand' => 'Spalding', 'size' => 'Size 7', 'cost' => 300000, 'price' => 699000, 'stock' => 20, 'min' => 5],
+            ['name' => 'Yonex Astrox 88 Badminton Racket', 'category' => 'perlengkapan', 'sku' => 'YX-AX88-032', 'brand' => 'Yonex', 'size' => '4U G5', 'cost' => 900000, 'price' => 1899000, 'stock' => 11, 'min' => 5],
+            ['name' => 'Mikasa Volleyball MVA200', 'category' => 'perlengkapan', 'sku' => 'MK-MVA200-033', 'brand' => 'Mikasa', 'size' => 'Size 5', 'cost' => 350000, 'price' => 799000, 'stock' => 14, 'min' => 5],
 
-            // Nutrition
-            ['name' => 'Whey Protein Gold Standard 2lb', 'category' => 'nutrition', 'sku' => 'ON-WP-040', 'brand' => 'Optimum Nutrition', 'size' => '2lb', 'cost' => 350000, 'price' => 699000, 'stock' => 28, 'min' => 10],
-            ['name' => 'Gu Energy Gel Variety Pack', 'category' => 'nutrition', 'sku' => 'GU-EG-041', 'brand' => 'Gu', 'size' => '24 pack', 'cost' => 180000, 'price' => 399000, 'stock' => 40, 'min' => 15],
-            ['name' => 'Pocari Sweat 500ml (Carton)', 'category' => 'nutrition', 'sku' => 'PC-500-042', 'brand' => 'Pocari Sweat', 'size' => '24x500ml', 'cost' => 120000, 'price' => 289000, 'stock' => 55, 'min' => 20],
-            ['name' => 'L-Men Advance Whey 1kg', 'category' => 'nutrition', 'sku' => 'LM-WP-043', 'brand' => 'L-Men', 'size' => '1kg', 'cost' => 280000, 'price' => 549000, 'stock' => 1, 'min' => 10],
+            // Nutrisi & Suplemen
+            ['name' => 'Whey Protein Gold Standard 2lb', 'category' => 'nutrisi', 'sku' => 'ON-WP-040', 'brand' => 'Optimum Nutrition', 'size' => '2lb', 'cost' => 350000, 'price' => 699000, 'stock' => 28, 'min' => 10],
+            ['name' => 'Gu Energy Gel Variety Pack', 'category' => 'nutrisi', 'sku' => 'GU-EG-041', 'brand' => 'Gu', 'size' => '24 pack', 'cost' => 180000, 'price' => 399000, 'stock' => 40, 'min' => 15],
+            ['name' => 'Pocari Sweat 500ml (Carton)', 'category' => 'nutrisi', 'sku' => 'PC-500-042', 'brand' => 'Pocari Sweat', 'size' => '24x500ml', 'cost' => 120000, 'price' => 289000, 'stock' => 55, 'min' => 20],
+            ['name' => 'L-Men Advance Whey 1kg', 'category' => 'nutrisi', 'sku' => 'LM-WP-043', 'brand' => 'L-Men', 'size' => '1kg', 'cost' => 280000, 'price' => 549000, 'stock' => 1, 'min' => 10],
 
-            // Fitness
+            // Peralatan Fitness
             ['name' => 'Adjustable Dumbbell Set 20kg', 'category' => 'fitness', 'sku' => 'DB-20KG-050', 'brand' => 'Rogue', 'size' => '20kg', 'cost' => 800000, 'price' => 1599000, 'stock' => 10, 'min' => 3],
             ['name' => 'Yoga Mat Premium 6mm', 'category' => 'fitness', 'sku' => 'YM-6MM-051', 'brand' => 'Manduka', 'size' => '6mm', 'cost' => 200000, 'price' => 549000, 'stock' => 25, 'min' => 10],
             ['name' => 'Resistance Band Set Pro', 'category' => 'fitness', 'sku' => 'RB-PRO-052', 'brand' => 'TheraBand', 'size' => '5 pcs', 'cost' => 120000, 'price' => 349000, 'stock' => 38, 'min' => 15],
@@ -143,20 +143,20 @@ class DummyDataSeeder extends Seeder
         ];
 
         $result = [];
-        $runningShoesDiscount = collect($discounts)->firstWhere('name', 'Running Shoes Promo 15%');
+        $runningShoesDiscount = collect($discounts)->firstWhere('name', 'Promo Sepatu Lari 15%');
 
         foreach ($products as $p) {
             $product = Product::updateOrCreate(
                 ['sku' => $p['sku']],
                 [
                     'category_id' => $categories[$p['category']]->id,
-                    'discount_id' => ($p['category'] === 'running-shoes' && $runningShoesDiscount) ? $runningShoesDiscount->id : null,
+                    'discount_id' => ($p['category'] === 'sepatu-lari' && $runningShoesDiscount) ? $runningShoesDiscount->id : null,
                     'name' => $p['name'],
                     'brand' => $p['brand'],
                     'size' => $p['size'],
                     'cost_price' => $p['cost'],
                     'selling_price' => $p['price'],
-                    'description' => "Premium quality {$p['name']} for athletes and sports enthusiasts. Authentic product with warranty.",
+                    'description' => "Produk berkualitas premium {$p['name']} untuk atlet dan pecinta olahraga. Produk asli dengan garansi.",
                     'status' => 'active',
                 ]
             );
@@ -260,7 +260,7 @@ class DummyDataSeeder extends Seeder
             }
 
             $discountAmount = 0;
-            $grandOpeningDiscount = Discount::where('name', 'Grand Opening 20% Off')->first();
+            $grandOpeningDiscount = Discount::where('name', 'Grand Opening Diskon 20%')->first();
             if ($grandOpeningDiscount) {
                 $discountAmount = round($subtotal * 0.2);
             }
