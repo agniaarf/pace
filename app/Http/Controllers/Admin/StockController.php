@@ -96,6 +96,6 @@ class StockController extends Controller
             'transaction_date' => now(),
         ]);
 
-        return back()->with('success', 'Stock adjusted successfully.');
+        return back()->with('success', 'Stok berhasil disesuaikan.');
     }
 }

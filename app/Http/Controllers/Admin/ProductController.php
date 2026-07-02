@@ -53,7 +53,7 @@ class ProductController extends Controller
         $product = Product::create($validated);
         $product->stock()->create($stockData);
 
-        return back()->with('success', 'Product created successfully.');
+        return back()->with('success', 'Produk berhasil dibuat.');
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -72,17 +72,17 @@ class ProductController extends Controller
 
         $product->update($validated);
 
-        return back()->with('success', 'Product updated successfully.');
+        return back()->with('success', 'Produk berhasil diperbarui.');
     }
 
     public function destroy(Product $product): RedirectResponse
     {
         if ($product->transactionItems()->exists()) {
-            return back()->with('error', 'Cannot delete product with transaction history. Set it to inactive instead.');
+            return back()->with('error', 'Produk tidak dapat dihapus karena memiliki riwayat transaksi. Nonaktifkan saja produk ini.');
         }
 
         $product->delete();
 
-        return back()->with('success', 'Product deleted successfully.');
+        return back()->with('success', 'Produk berhasil dihapus.');
     }
 }

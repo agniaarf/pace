@@ -26,7 +26,7 @@ class LoginController extends Controller
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
-                'username' => 'The provided credentials do not match our records.',
+                'username' => 'Username atau password tidak sesuai.',
             ]);
         }
 
@@ -38,7 +38,7 @@ class LoginController extends Controller
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'username' => 'Your account is inactive. Please contact the administrator.',
+                'username' => 'Akun Anda tidak aktif. Silakan hubungi administrator.',
             ]);
         }
 

@@ -38,7 +38,7 @@ class CustomerController extends Controller
 
         Customer::create($validated);
 
-        return back()->with('success', 'Customer created successfully.');
+        return back()->with('success', 'Pelanggan berhasil ditambahkan.');
     }
 
     public function update(Request $request, Customer $customer): RedirectResponse
@@ -58,13 +58,13 @@ class CustomerController extends Controller
 
         $customer->update($validated);
 
-        return back()->with('success', 'Customer updated successfully.');
+        return back()->with('success', 'Pelanggan berhasil diperbarui.');
     }
 
     public function destroy(Customer $customer): RedirectResponse
     {
         $customer->delete();
 
-        return back()->with('success', 'Customer deleted successfully.');
+        return back()->with('success', 'Pelanggan berhasil dihapus.');
     }
 }

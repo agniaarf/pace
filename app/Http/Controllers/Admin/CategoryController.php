@@ -40,7 +40,7 @@ class CategoryController extends Controller
 
         Category::create($validated);
 
-        return back()->with('success', 'Category created successfully.');
+        return back()->with('success', 'Kategori berhasil dibuat.');
     }
 
     public function update(Request $request, Category $category): RedirectResponse
@@ -55,17 +55,17 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return back()->with('success', 'Category updated successfully.');
+        return back()->with('success', 'Kategori berhasil diperbarui.');
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         if ($category->products()->exists()) {
-            return back()->with('error', 'Cannot delete category with existing products.');
+            return back()->with('error', 'Kategori tidak dapat dihapus karena masih memiliki produk.');
         }
 
         $category->delete();
 
-        return back()->with('success', 'Category deleted successfully.');
+        return back()->with('success', 'Kategori berhasil dihapus.');
     }
 }

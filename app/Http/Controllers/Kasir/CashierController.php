@@ -86,7 +86,7 @@ class CashierController extends Controller
                 $stock = $product->stock;
 
                 if (!$stock || $stock->quantity < $item['quantity']) {
-                    return back()->with('error', "Insufficient stock for {$product->name}.");
+                    return back()->with('error', "Stok tidak mencukupi untuk {$product->name}.");
                 }
 
                 $lineTotal = $item['unit_price'] * $item['quantity'];
@@ -178,7 +178,7 @@ class CashierController extends Controller
                 $customer->increment('total_spent', $totalAmount);
             }
 
-            return redirect()->route('kasir.dashboard')->with('success', "Transaction {$txNumber} completed successfully.");
+            return redirect()->route('kasir.dashboard')->with('success', "Transaksi {$txNumber} berhasil diselesaikan.");
         });
     }
 }

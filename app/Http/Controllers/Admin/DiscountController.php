@@ -44,7 +44,7 @@ class DiscountController extends Controller
 
         $this->syncProductDiscounts($discount);
 
-        return back()->with('success', 'Discount created successfully.');
+        return back()->with('success', 'Diskon berhasil dibuat.');
     }
 
     public function update(Request $request, Discount $discount): RedirectResponse
@@ -64,7 +64,7 @@ class DiscountController extends Controller
 
         $this->syncProductDiscounts($discount);
 
-        return back()->with('success', 'Discount updated successfully.');
+        return back()->with('success', 'Diskon berhasil diperbarui.');
     }
 
     public function destroy(Discount $discount): RedirectResponse
@@ -73,7 +73,7 @@ class DiscountController extends Controller
 
         $discount->delete();
 
-        return back()->with('success', 'Discount deleted successfully.');
+        return back()->with('success', 'Diskon berhasil dihapus.');
     }
 
     private function syncProductDiscounts(Discount $discount): void
