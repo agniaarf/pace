@@ -39,7 +39,6 @@ class ProductController extends Controller
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
             'minimum_quantity' => ['nullable', 'integer', 'min:0'],
@@ -50,12 +49,6 @@ class ProductController extends Controller
             'minimum_quantity' => $validated['minimum_quantity'] ?? 0,
         ];
         unset($validated['stock_quantity'], $validated['minimum_quantity']);
-
-        if ($request->hasFile('photo')) {
-            $validated['photo'] = $this->convertAndStorePhoto($request->file('photo'));
-        } else {
-            unset($validated['photo']);
-        }
 
         $product = Product::create($validated);
         $product->stock()->create($stockData);
@@ -84,6 +77,10 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        if ($product->transactionItems()->exists()) {
+            return back()->with('error', 'Cannot delete product with transaction history. Set it to inactive instead.');
+        }
+
         $product->delete();
 
         return back()->with('success', 'Product deleted successfully.');
