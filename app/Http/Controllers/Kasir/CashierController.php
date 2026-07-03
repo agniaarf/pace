@@ -101,6 +101,27 @@ class CashierController extends Controller
         ]);
     }
 
+    public function customers(): Response
+    {
+        $customers = Customer::where('status', 'active')
+            ->orderBy('full_name')
+            ->get(['id', 'member_code', 'full_name', 'phone', 'email', 'total_purchases', 'total_spent', 'created_at'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'member_code' => $c->member_code,
+                'full_name' => $c->full_name,
+                'phone' => $c->phone,
+                'email' => $c->email,
+                'total_purchases' => $c->total_purchases ?? 0,
+                'total_spent' => (float) ($c->total_spent ?? 0),
+                'created_at' => $c->created_at,
+            ]);
+
+        return Inertia::render('Kasir/Customers', [
+            'customers' => $customers,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

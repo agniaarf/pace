@@ -80,5 +80,6 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'kasirDashboard'])->name('kasir.dashboard');
     Route::get('/cashier', [CashierController::class, 'index'])->name('kasir.cashier');
     Route::get('/transactions', [CashierController::class, 'history'])->name('kasir.transactions');
+    Route::get('/customers', [CashierController::class, 'customers'])->name('kasir.customers');
     Route::post('/cashier', [CashierController::class, 'store'])->name('kasir.cashier.store');
 });
