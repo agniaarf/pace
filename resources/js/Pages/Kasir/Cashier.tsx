@@ -1,6 +1,7 @@
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 import {
     Dialog,
     DialogContent,
@@ -13,11 +14,14 @@ import KasirLayout from '@/Layouts/KasirLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
+    ArrowRight,
     Banknote,
     Check,
     CheckCircle,
     CreditCard,
+    Info,
     Loader2,
+    Mail,
     Minus,
     Package,
     Plus,
@@ -88,6 +92,15 @@ const PAYMENT_ICONS: Record<string, typeof Banknote> = {
     ewallet: CreditCard,
 };
 
+type CheckoutStep = 'produk' | 'konfirmasi' | 'bayar' | 'selesai';
+
+const STEPS: { label: string }[] = [
+    { label: 'Produk' },
+    { label: 'Konfirmasi' },
+    { label: 'Bayar' },
+    { label: 'Selesai' },
+];
+
 export default function Cashier() {
     const { products, customers, paymentMethods, activeDiscounts, flash } = usePage<PageProps & CashierPageProps>().props;
     const { toast } = useToast();
@@ -95,12 +108,15 @@ export default function Cashier() {
     const [search, setSearch] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<CashierCustomer | null>(null);
     const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState('');
-    const [checkoutStep, setCheckoutStep] = useState<'cart' | 'payment' | 'success' | null>(null);
+    const [step, setStep] = useState<CheckoutStep>('produk');
     const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
     const [cashInput, setCashInput] = useState('');
     const [txResult, setTxResult] = useState<TransactionReceipt | null>(null);
-    const [showReceipt, setShowReceipt] = useState(false);
+    const [newCustomer, setNewCustomer] = useState({ full_name: '', phone: '', email: '' });
+
+    const currentStepIndex = STEPS.findIndex(s => s.label.toLowerCase() === step);
 
     const { setData, post, processing, reset } = useForm<{
         items: { product_id: number; quantity: number; unit_price: number }[];
@@ -223,12 +239,7 @@ export default function Cashier() {
                         created_at: new Date().toISOString(),
                     });
                 }
-                setCheckoutStep('success');
-                setCart([]);
-                setSelectedCustomer(null);
-                setCashInput('');
-                setPaymentMethodId(null);
-                reset();
+                setStep('selesai');
                 toast('Transaksi berhasil diselesaikan!', 'success');
             },
             onError: () => {
@@ -238,6 +249,35 @@ export default function Cashier() {
     };
 
     const quickCash = [50000, 100000, 150000, 200000, 250000, 300000];
+
+    const handleNewCustomer = () => {
+        if (!newCustomer.full_name || !newCustomer.phone) {
+            toast('Nama lengkap dan nomor HP wajib diisi.', 'error');
+            return;
+        }
+        post('/admin/customers', {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setShowNewCustomerModal(false);
+                setNewCustomer({ full_name: '', phone: '', email: '' });
+                toast('Pelanggan baru berhasil didaftarkan!', 'success');
+            },
+            onError: () => {
+                toast('Gagal mendaftarkan pelanggan baru.', 'error');
+            },
+        });
+    };
+
+    const resetTransaction = () => {
+        setStep('produk');
+        setCart([]);
+        setSelectedCustomer(null);
+        setCashInput('');
+        setPaymentMethodId(null);
+        setTxResult(null);
+        reset();
+    };
 
     return (
         <>
@@ -249,7 +289,14 @@ export default function Cashier() {
                     </div>
                 )}
 
-                <div className="flex h-auto flex-col gap-4 lg:h-[calc(100vh-140px)] lg:flex-row lg:overflow-hidden">
+                {/* Breadcrumb */}
+                <div className="mb-4">
+                    <ProgressStepper steps={STEPS} currentStep={currentStepIndex} />
+                </div>
+
+                {/* Step 1: Produk */}
+                {step === 'produk' && (
+                <div className="flex h-auto flex-col gap-4 lg:h-[calc(100vh-200px)] lg:flex-row lg:overflow-hidden animate-fade-in">
                     {/* Product grid */}
                     <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4 animate-fade-in">
                         <div className="relative mb-4">
@@ -320,9 +367,14 @@ export default function Cashier() {
                         <div className="border-b border-border px-4 py-3">
                             <div className="mb-2 flex items-center justify-between">
                                 <span className="text-xs font-semibold text-foreground">Pelanggan</span>
-                                <button onClick={() => setShowCustomerModal(true)} className="text-xs font-semibold text-primary hover:underline">
-                                    {selectedCustomer ? 'Ganti' : 'Pilih Member'}
-                                </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setShowNewCustomerModal(true)} className="text-xs font-semibold text-primary hover:underline">
+                                            Daftar Baru
+                                        </button>
+                                        <button onClick={() => setShowCustomerModal(true)} className="text-xs font-semibold text-primary hover:underline">
+                                            {selectedCustomer ? 'Ganti' : 'Pilih Member'}
+                                        </button>
+                                    </div>
                             </div>
                             {selectedCustomer ? (
                                 <div className="flex items-center gap-2 rounded-lg border border-orange-100 bg-accent p-2">
@@ -419,19 +471,201 @@ export default function Cashier() {
                                 className="w-full justify-center"
                                 size="lg"
                                 disabled={cart.length === 0}
-                                onClick={() => setCheckoutStep('payment')}
+                                onClick={() => setStep('konfirmasi')}
                             >
-                                {cart.length > 0 && (
-                                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                                        <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
-                                    </span>
-                                )}
                                 Lanjut ke Pembayaran
                             </Button>
                         </div>
                     </div>
                 </div>
+                )}
+
+                {/* Step 2: Konfirmasi */}
+                {step === 'konfirmasi' && (
+                    <div className="flex h-auto flex-col gap-4 lg:h-[calc(100vh-200px)] lg:flex-row lg:overflow-hidden animate-fade-in">
+                        <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card p-4 space-y-4">
+                            <div>
+                                <h3 className="mb-3 text-sm font-bold text-foreground">Ringkasan Pesanan</h3>
+                                <div className="rounded-xl border border-border bg-muted/30 p-4">
+                                    <div className="mb-3 space-y-2">
+                                        {cart.map(item => (
+                                            <div key={item.product.id} className="flex justify-between text-sm">
+                                                <span>{item.product.name} <span className="text-muted-foreground">×{item.quantity}</span></span>
+                                                <span className="font-mono">{formatCurrency(item.product.selling_price * item.quantity)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-1 border-t border-border pt-2">
+                                        <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
+                                        {appliedDiscounts.map(d => (
+                                            <div key={d.name} className="flex justify-between text-xs text-emerald-600">
+                                                <span>Diskon: {d.name}</span>
+                                                <span className="font-mono">−{formatCurrency(d.amount)}</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between text-xs text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {appliedDiscounts.length > 0 && (
+                                <div className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+                                    <Tag className="h-4 w-4" />
+                                    Hemat {formatCurrency(totalDiscount)} dengan {appliedDiscounts.length} diskon aktif
+                                </div>
+                            )}
+                            <div>
+                                <p className="mb-2 text-sm font-semibold text-foreground">Metode Pembayaran</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {paymentMethods.map(m => {
+                                        const Icon = PAYMENT_ICONS[m.code] ?? Banknote;
+                                        return (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => setPaymentMethodId(m.id)}
+                                                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                                                    paymentMethodId === m.id ? 'border-primary bg-accent shadow-sm' : 'border-border bg-card hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${paymentMethodId === m.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
+                                                    <Icon className="h-4 w-4" />
+                                                </div>
+                                                <span className="text-sm font-semibold">{m.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex w-full flex-shrink-0 flex-col rounded-xl border border-border bg-card lg:w-80 lg:overflow-hidden">
+                            <div className="border-b border-border px-5 py-3">
+                                <h3 className="text-sm font-bold text-foreground">Total Pembayaran</h3>
+                            </div>
+                            <div className="flex-1 space-y-3 p-4">
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
+                                    {appliedDiscounts.map(d => (
+                                        <div key={d.name} className="flex justify-between text-xs font-medium text-emerald-600"><span>{d.name}</span><span className="font-mono">−{formatCurrency(d.amount)}</span></div>
+                                    ))}
+                                    <div className="flex justify-between text-xs text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
+                                    <div className="flex justify-between border-t border-border pt-2 text-lg font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(totalAmount)}</span></div>
+                                </div>
+                                {selectedCustomer && (
+                                    <div className="rounded-lg border border-orange-100 bg-accent p-2">
+                                        <div className="text-xs font-semibold text-foreground">{selectedCustomer.full_name}</div>
+                                        <div className="font-mono text-xs text-primary">{selectedCustomer.member_code ?? selectedCustomer.phone}</div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-2 border-t border-border p-4">
+                                <Button variant="gradient" className="w-full justify-center" size="lg" disabled={!paymentMethodId} onClick={() => setStep('bayar')}>
+                                    Input Jumlah Uang<ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" className="w-full justify-center" onClick={() => setStep('produk')}>
+                                    <ArrowLeft className="h-4 w-4" />Kembali
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 3: Bayar */}
+                {step === 'bayar' && (
+                    <div className="mx-auto max-w-2xl animate-fade-in space-y-4">
+                        <div className="rounded-xl border border-border bg-card p-6">
+                            <h3 className="mb-4 text-lg font-bold text-foreground">Pembayaran Tunai</h3>
+                            <div className="mb-6 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 p-4 text-white">
+                                <p className="text-sm text-white/80">Total Belanja</p>
+                                <p className="font-mono text-3xl font-bold">{formatCurrency(totalAmount)}</p>
+                            </div>
+                            <div className="mb-4">
+                                <Label className="mb-2 block text-sm font-semibold text-foreground">Jumlah Uang Diterima</Label>
+                                <Input type="text" placeholder="Rp 0" value={cashInput ? `Rp ${parseInt(cashInput.replace(/\D/g, '')).toLocaleString('id-ID')}` : ''} onChange={e => setCashInput(e.target.value.replace(/\D/g, ''))} className="font-mono text-2xl font-bold h-14" />
+                            </div>
+                            <div className="mb-6 grid grid-cols-3 gap-2">
+                                {quickCash.map(n => (
+                                    <button key={n} onClick={() => setCashInput(String(n))} className="rounded-lg border border-border bg-card py-3 font-mono text-sm font-semibold transition-all hover:bg-muted hover:border-orange-300">
+                                        {n >= 1000000 ? `${n / 1000000}jt` : `${n / 1000}rb`}
+                                    </button>
+                                ))}
+                                <button onClick={() => setCashInput(String(totalAmount))} className="rounded-lg border-2 border-primary bg-primary/5 py-3 font-mono text-sm font-bold text-primary transition-all hover:bg-primary/10">
+                                    Uang Pas
+                                </button>
+                            </div>
+                            {cashAmount > 0 && (
+                                <div className={`rounded-xl p-4 ${change >= 0 ? 'border border-emerald-200 bg-emerald-50' : 'border border-red-200 bg-red-50'}`}>
+                                    <p className="mb-1 text-sm font-semibold text-muted-foreground">Kembalian</p>
+                                    <p className={`font-mono text-3xl font-bold ${change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                        {change >= 0 ? formatCurrency(change) : `Kurang ${formatCurrency(Math.abs(change))}`}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1 justify-center" size="lg" onClick={() => setStep('konfirmasi')}>
+                                <ArrowLeft className="h-4 w-4" />Kembali
+                            </Button>
+                            <Button variant="gradient" className="flex-1 justify-center" size="lg" disabled={cashAmount < totalAmount || processing} onClick={handleCheckout}>
+                                {processing ? <><Loader2 className="h-4 w-4 animate-spin" />Memproses...</> : 'Simpan & Selesai'}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 4: Selesai */}
+                {step === 'selesai' && txResult && (
+                    <div className="mx-auto max-w-md animate-fade-in">
+                        <div className="rounded-xl border border-border bg-card p-6">
+                            <div className="mb-6 flex flex-col items-center text-center">
+                                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 animate-scale-in">
+                                    <CheckCircle className="h-10 w-10 text-emerald-500" />
+                                </div>
+                                <h2 className="mb-1 text-2xl font-bold text-foreground">Transaksi Berhasil!</h2>
+                                <p className="text-sm text-muted-foreground">{txResult.transaction_number}</p>
+                            </div>
+                            <div className="mb-4 grid grid-cols-2 gap-3">
+                                <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                                    <p className="text-xs text-muted-foreground">Total</p>
+                                    <p className="font-mono text-lg font-bold text-foreground">{formatCurrency(txResult.total_amount)}</p>
+                                </div>
+                                <div className="rounded-lg border border-border bg-muted/30 p-3 text-center">
+                                    <p className="text-xs text-muted-foreground">Kembalian</p>
+                                    <p className="font-mono text-lg font-bold text-emerald-600">{formatCurrency(txResult.change_amount)}</p>
+                                </div>
+                            </div>
+                            <div className="mb-6 w-full rounded-xl border border-border bg-card p-4 text-left" data-receipt>
+                                <div className="mb-3 border-b border-dashed border-border pb-2 text-center">
+                                    <p className="text-sm font-bold text-foreground">PACE POS</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(txResult.created_at).toLocaleString('id-ID')}</p>
+                                </div>
+                                {txResult.customer_name && (
+                                    <div className="mb-2 text-xs text-muted-foreground">Pelanggan: <span className="font-medium text-foreground">{txResult.customer_name}</span></div>
+                                )}
+                                <div className="mb-2 max-h-40 space-y-1 overflow-y-auto">
+                                    {txResult.items.map((item, idx) => (
+                                        <div key={idx} className="text-xs">
+                                            <div className="flex justify-between"><span className="font-medium text-foreground">{item.name}</span><span className="font-mono">{formatCurrency(item.subtotal)}</span></div>
+                                            <div className="text-muted-foreground">{item.quantity} x {formatCurrency(item.unit_price)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="space-y-1 border-t border-dashed border-border pt-2 text-xs">
+                                    <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(txResult.subtotal)}</span></div>
+                                    {txResult.discount_amount > 0 && <div className="flex justify-between text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span></div>}
+                                    <div className="flex justify-between text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(txResult.tax_amount)}</span></div>
+                                    <div className="flex justify-between border-t border-border pt-1 text-sm font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(txResult.total_amount)}</span></div>
+                                    <div className="flex justify-between text-muted-foreground"><span>Bayar ({txResult.payment_method})</span><span className="font-mono">{formatCurrency(txResult.amount_paid)}</span></div>
+                                    {txResult.change_amount > 0 && <div className="flex justify-between font-semibold text-emerald-600"><span>Kembalian</span><span className="font-mono">{formatCurrency(txResult.change_amount)}</span></div>}
+                                </div>
+                                <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">Own Your Pace, Unleash Your Power</div>
+                            </div>
+                            <div className="flex w-full gap-2">
+                                <Button variant="outline" className="flex-1 justify-center" onClick={() => window.print()}><Printer className="h-4 w-4" />Cetak Struk</Button>
+                                <Button variant="outline" className="flex-1 justify-center" onClick={() => toast('Fitur kirim email akan segera hadir.', 'info')}><Mail className="h-4 w-4" />Kirim Email</Button>
+                                <Button variant="gradient" className="flex-1 justify-center" onClick={resetTransaction}><Check className="h-4 w-4" />Selesai</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </KasirLayout>
 
             {/* Customer selection modal */}
@@ -465,207 +699,46 @@ export default function Cashier() {
                                 <p className="py-4 text-center text-sm text-muted-foreground">Pelanggan tidak ditemukan.</p>
                             )}
                         </div>
-                        <Button variant="outline" className="w-full justify-center" onClick={() => { setSelectedCustomer(null); setShowCustomerModal(false); setCustomerSearch(''); }}>
-                            Lanjut sebagai Umum
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" className="flex-1 justify-center" onClick={() => { setSelectedCustomer(null); setShowCustomerModal(false); setCustomerSearch(''); }}>
+                                Lanjut sebagai Umum
+                            </Button>
+                            <Button variant="gradient" className="flex-1 justify-center" onClick={() => { setShowCustomerModal(false); setShowNewCustomerModal(true); }}>
+                                Daftar Baru
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Payment dialog */}
-            <Dialog open={checkoutStep === 'payment'} onOpenChange={(open) => { if (!open) setCheckoutStep(null); }}>
-                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* New customer modal */}
+            <Dialog open={showNewCustomerModal} onOpenChange={setShowNewCustomerModal}>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Pembayaran</DialogTitle>
+                        <DialogTitle>Daftarkan Member Baru</DialogTitle>
                     </DialogHeader>
-                    <ProgressStepper
-                        steps={[
-                            { label: 'Keranjang' },
-                            { label: 'Pembayaran' },
-                            { label: 'Selesai' },
-                        ]}
-                        currentStep={1}
-                        className="mb-4"
-                    />
                     <div className="space-y-4">
-                        {/* Order summary */}
-                        <div className="rounded-xl border border-border bg-muted/30 p-4">
-                            <div className="mb-3 space-y-1.5">
-                                {cart.map(item => (
-                                    <div key={item.product.id} className="flex justify-between text-sm">
-                                        <span>{item.product.name} <span className="text-muted-foreground">×{item.quantity}</span></span>
-                                        <span className="font-mono">{formatCurrency(item.product.selling_price * item.quantity)}</span>
-                                    </div>
-                                ))}
+                        <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-700">
+                            <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                            <span>Pelanggan akan otomatis terpilih untuk transaksi ini dan menerima kode member setelah pendaftaran berhasil.</span>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <Label className="mb-1.5 block text-sm font-semibold">Nama Lengkap</Label>
+                                <Input value={newCustomer.full_name} onChange={(e) => setNewCustomer({ ...newCustomer, full_name: e.target.value })} placeholder="Masukkan nama lengkap" />
                             </div>
-                            <div className="space-y-1 border-t border-border pt-2">
-                                <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
-                                {totalDiscount > 0 && (
-                                    <div className="flex justify-between text-xs text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(totalDiscount)}</span></div>
-                                )}
-                                <div className="flex justify-between text-xs text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
-                                <div className="flex justify-between pt-1 text-base font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(totalAmount)}</span></div>
+                            <div>
+                                <Label className="mb-1.5 block text-sm font-semibold">Nomor HP</Label>
+                                <Input value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} placeholder="08xxxxxxxxxx" />
+                            </div>
+                            <div>
+                                <Label className="mb-1.5 block text-sm font-semibold">Email <span className="text-muted-foreground">(opsional)</span></Label>
+                                <Input type="email" value={newCustomer.email} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} placeholder="email@contoh.com" />
                             </div>
                         </div>
-
-                        {/* Payment methods */}
-                        <div>
-                            <p className="mb-2 text-sm font-semibold">Metode Pembayaran</p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {paymentMethods.map(m => {
-                                    const Icon = PAYMENT_ICONS[m.code] ?? Banknote;
-                                    return (
-                                        <button
-                                            key={m.id}
-                                            onClick={() => setPaymentMethodId(m.id)}
-                                            className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
-                                                paymentMethodId === m.id ? 'border-primary bg-accent shadow-sm' : 'border-border bg-card hover:border-orange-300'
-                                            }`}
-                                        >
-                                            <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${paymentMethodId === m.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
-                                                <Icon className="h-4 w-4" />
-                                            </div>
-                                            <span className="text-sm font-semibold">{m.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Cash input */}
-                        {paymentMethodId && (
-                            <div className="animate-fade-in space-y-3">
-                                <div>
-                                    <p className="mb-1.5 text-xs font-semibold">Jumlah Diterima</p>
-                                    <Input
-                                        type="text"
-                                        placeholder="Rp 0"
-                                        value={cashInput ? `Rp ${parseInt(cashInput.replace(/\D/g, '')).toLocaleString('id-ID')}` : ''}
-                                        onChange={e => setCashInput(e.target.value.replace(/\D/g, ''))}
-                                        className="font-mono text-xl font-bold"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {quickCash.map(n => (
-                                        <button
-                                            key={n}
-                                            onClick={() => setCashInput(String(n))}
-                                            className="rounded-lg border border-border bg-card py-2 font-mono text-sm font-semibold transition-all hover:bg-muted hover:border-orange-300"
-                                        >
-                                            {n >= 1000000 ? `${n / 1000000}jt` : `${n / 1000}rb`}
-                                        </button>
-                                    ))}
-                                </div>
-                                {cashAmount > 0 && (
-                                    <div className={`rounded-xl p-3 ${change >= 0 ? 'border border-emerald-200 bg-emerald-50' : 'border border-red-200 bg-red-50'}`}>
-                                        <p className="mb-0.5 text-xs font-semibold text-muted-foreground">Kembalian</p>
-                                        <p className={`font-mono text-xl font-bold ${change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {change >= 0 ? formatCurrency(change) : `Kurang ${formatCurrency(Math.abs(change))}`}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        <div className="flex flex-col gap-3 sm:flex-row">
-                            <Button variant="outline" onClick={() => setCheckoutStep(null)} className="w-full sm:w-auto">
-                                <ArrowLeft className="h-4 w-4" />Kembali
-                            </Button>
-                            <Button
-                                variant="gradient"
-                                className="flex-1 justify-center w-full"
-                                disabled={!paymentMethodId || (cashAmount < totalAmount && cashAmount > 0) || processing}
-                                onClick={handleCheckout}
-                            >
-                                {processing ? (
-                                    <><Loader2 className="h-4 w-4 animate-spin" />Memproses...</>
-                                ) : 'Selesaikan Transaksi'}
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Success dialog with receipt */}
-            <Dialog open={checkoutStep === 'success'} onOpenChange={(open) => { if (!open) { setCheckoutStep(null); setTxResult(null); } }}>
-                <DialogContent className="sm:max-w-sm max-h-[90vh] overflow-y-auto">
-                    <div className="flex flex-col items-center text-center">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 animate-scale-in">
-                            <CheckCircle className="h-8 w-8 text-emerald-500" />
-                        </div>
-                        <h2 className="mb-1 text-xl font-bold">Transaksi Berhasil!</h2>
-                        <p className="mb-4 text-sm text-muted-foreground">{txResult?.transaction_number}</p>
-
-                        {/* Receipt */}
-                        <div className="mb-4 w-full rounded-xl border border-border bg-card p-4 text-left" data-receipt>
-                            <div className="mb-3 border-b border-dashed border-border pb-2 text-center">
-                                <p className="text-sm font-bold text-foreground">PACE POS</p>
-                                <p className="text-xs text-muted-foreground">{txResult && new Date(txResult.created_at).toLocaleString('id-ID')}</p>
-                            </div>
-
-                            {txResult?.customer_name && (
-                                <div className="mb-2 text-xs text-muted-foreground">
-                                    Pelanggan: <span className="font-medium text-foreground">{txResult.customer_name}</span>
-                                </div>
-                            )}
-
-                            <div className="mb-2 max-h-40 space-y-1 overflow-y-auto">
-                                {txResult?.items.map((item, idx) => (
-                                    <div key={idx} className="text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="font-medium text-foreground">{item.name}</span>
-                                            <span className="font-mono">{formatCurrency(item.subtotal)}</span>
-                                        </div>
-                                        <div className="text-muted-foreground">
-                                            {item.quantity} x {formatCurrency(item.unit_price)}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="space-y-1 border-t border-dashed border-border pt-2 text-xs">
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span>Subtotal</span>
-                                    <span className="font-mono">{txResult && formatCurrency(txResult.subtotal)}</span>
-                                </div>
-                                {txResult && txResult.discount_amount > 0 && (
-                                    <div className="flex justify-between text-emerald-600">
-                                        <span>Diskon</span>
-                                        <span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span>Pajak (11%)</span>
-                                    <span className="font-mono">{txResult && formatCurrency(txResult.tax_amount)}</span>
-                                </div>
-                                <div className="flex justify-between border-t border-border pt-1 text-sm font-bold">
-                                    <span>Total</span>
-                                    <span className="font-mono text-primary">{txResult && formatCurrency(txResult.total_amount)}</span>
-                                </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                    <span>Bayar ({txResult?.payment_method})</span>
-                                    <span className="font-mono">{txResult && formatCurrency(txResult.amount_paid)}</span>
-                                </div>
-                                {txResult && txResult.change_amount > 0 && (
-                                    <div className="flex justify-between font-semibold text-emerald-600">
-                                        <span>Kembalian</span>
-                                        <span className="font-mono">{formatCurrency(txResult.change_amount)}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">
-                                Terima kasih telah berbelanja! 🛍️
-                            </div>
-                        </div>
-
-                        <div className="flex w-full gap-2">
-                            <Button variant="outline" className="flex-1 justify-center" onClick={() => window.print()}>
-                                <Printer className="h-4 w-4" />Cetak
-                            </Button>
-                            <Button variant="gradient" className="flex-1 justify-center" onClick={() => { setCheckoutStep(null); setTxResult(null); }}>
-                                <Check className="h-4 w-4" />Selesai
-                            </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" className="flex-1 justify-center" onClick={() => setShowNewCustomerModal(false)}>Batal</Button>
+                            <Button variant="gradient" className="flex-1 justify-center" onClick={handleNewCustomer}>Daftarkan</Button>
                         </div>
                     </div>
                 </DialogContent>
