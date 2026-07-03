@@ -73,16 +73,61 @@ class DashboardController extends Controller
     public function kasirDashboard(Request $request): Response
     {
         $cashierId = $request->user()->id;
+        $today = today();
+        $yesterday = $today->copy()->subDay();
+
+        $todayTransactions = Transaction::where('cashier_id', $cashierId)
+            ->whereDate('created_at', $today)
+            ->count();
+
+        $todayRevenue = (float) Transaction::where('cashier_id', $cashierId)
+            ->whereDate('created_at', $today)
+            ->sum('total_amount');
+
+        $yesterdayTransactions = Transaction::where('cashier_id', $cashierId)
+            ->whereDate('created_at', $yesterday)
+            ->count();
+
+        $yesterdayRevenue = (float) Transaction::where('cashier_id', $cashierId)
+            ->whereDate('created_at', $yesterday)
+            ->sum('total_amount');
+
+        $transactionDelta = $yesterdayTransactions > 0
+            ? (($todayTransactions - $yesterdayTransactions) / $yesterdayTransactions) * 100
+            : ($todayTransactions > 0 ? 100 : 0);
+
+        $revenueDelta = $yesterdayRevenue > 0
+            ? (($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100
+            : ($todayRevenue > 0 ? 100 : 0);
+
+        $recentTransactions = Transaction::with(['customer', 'items'])
+            ->where('cashier_id', $cashierId)
+            ->latest('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($t) => [
+                'id' => $t->id,
+                'transaction_number' => $t->transaction_number,
+                'created_at' => $t->created_at,
+                'total_amount' => (float) $t->total_amount,
+                'status' => $t->status,
+                'customer_name' => $t->customer?->full_name ?? 'Guest',
+                'payment_method_code' => $t->payment_method_code,
+                'item_count' => $t->items()->count(),
+            ]);
 
         return Inertia::render('Kasir/Dashboard', [
             'stats' => [
-                'todayTransactions' => Transaction::where('cashier_id', $cashierId)->whereDate('created_at', today())->count(),
-                'todayRevenue' => (float) Transaction::where('cashier_id', $cashierId)->whereDate('created_at', today())->sum('total_amount'),
+                'todayTransactions' => $todayTransactions,
+                'todayRevenue' => $todayRevenue,
                 'totalProducts' => Product::count(),
                 'availableProducts' => Product::whereHas('stock', function ($q) {
                     $q->where('quantity', '>', 0);
                 })->count(),
+                'transactionDelta' => round($transactionDelta, 1),
+                'revenueDelta' => round($revenueDelta, 1),
             ],
+            'recentTransactions' => $recentTransactions,
         ]);
     }
 }
