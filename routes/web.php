@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/stock', [StockController::class, 'index'])->name('admin.stock.index');
     Route::get('/stock/alerts', [StockController::class, 'alerts'])->name('admin.stock.alerts');
     Route::post('/stock/{stock}/adjust', [StockController::class, 'adjust']);
+
+    // Stock Movements
+    Route::get('/stock-movements', [StockMovementController::class, 'index'])->name('admin.stock-movements.index');
 
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('admin.transactions.index');
