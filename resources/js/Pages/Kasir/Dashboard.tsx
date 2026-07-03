@@ -92,7 +92,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* CTA Banner */}
-                    <Link href="/kasir/cashier">
+                    <Link href="/kasir/cashier" className="block">
                         <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 p-6 shadow-glow transition hover:shadow-elevated">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
