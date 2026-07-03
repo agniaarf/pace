@@ -1,9 +1,10 @@
 import AppLayout, { type NavItem } from '@/Components/Layout/AppLayout';
-import { LayoutDashboard, ShoppingCart, Users } from 'lucide-react';
+import { History, LayoutDashboard, ShoppingCart, Users } from 'lucide-react';
 
 const kasirNavItems: NavItem[] = [
     { label: 'Dasbor', href: '/kasir/dashboard', icon: LayoutDashboard },
     { label: 'Kasir', href: '/kasir/cashier', icon: ShoppingCart, permission: 'transactions.create' },
+    { label: 'Riwayat Transaksi', href: '/kasir/transactions', icon: History },
     { label: 'Pelanggan', href: '/kasir/customers', icon: Users, permission: 'customers.read' },
 ];
 
