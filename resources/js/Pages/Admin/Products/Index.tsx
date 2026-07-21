@@ -18,36 +18,54 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { Switch } from '@/Components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Edit, Package, Plus, Trash2 } from 'lucide-react';
+import { Edit, Layers, Package, Plus, Trash2 } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
 
 interface Category { id: number; name: string }
-interface Stock { id: number; quantity: number; minimum_quantity: number }
+interface VariantStock { id: number; quantity: number; minimum_quantity: number }
+interface Variant {
+    id: number;
+    product_id: number;
+    size: string | null;
+    color: string | null;
+    sku: string;
+    barcode: string | null;
+    price_adjustment: string;
+    status: 'active' | 'inactive';
+    stock?: VariantStock | null;
+}
 interface Product {
     id: number;
     category_id: number | null;
     name: string;
-    sku: string | null;
     brand: string | null;
-    size: string | null;
     cost_price: string;
     selling_price: string;
     description: string | null;
     status: 'active' | 'inactive';
     category?: Category | null;
-    stock?: Stock | null;
+    variants: Variant[];
 }
 
 interface ProductsPageProps {
     products: Product[];
     categories: Category[];
 }
+
+const variantLabel = (v: { size: string | null; color: string | null }) => {
+    const parts = [v.size, v.color].filter(Boolean);
+    return parts.length ? parts.join(' / ') : 'Default';
+};
+
+const totalStock = (p: Product) => p.variants.reduce((sum, v) => sum + (v.stock?.quantity ?? 0), 0);
+const minStock = (p: Product) => Math.min(...p.variants.map((v) => v.stock?.minimum_quantity ?? 0));
 
 export default function ProductsIndex() {
     const { products, categories, flash } = usePage<PageProps & ProductsPageProps>().props;
@@ -58,28 +76,62 @@ export default function ProductsIndex() {
     const [costPriceDisplay, setCostPriceDisplay] = useState('');
     const [sellingPriceDisplay, setSellingPriceDisplay] = useState('');
 
+    const [variantsProductId, setVariantsProductId] = useState<number | null>(null);
+    const variantsProduct = useMemo(
+        () => products.find((p) => p.id === variantsProductId) ?? null,
+        [products, variantsProductId],
+    );
+    const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+    const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
+    const [deleteVariantId, setDeleteVariantId] = useState<number | null>(null);
+
     const deleteForm = useForm();
+    const deleteVariantForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm<{
         category_id: string;
         name: string;
-        sku: string;
         brand: string;
-        size: string;
         cost_price: string;
         selling_price: string;
         description: string;
         status: 'active' | 'inactive';
+        size: string;
+        color: string;
+        sku: string;
+        barcode: string;
         stock_quantity: string;
         minimum_quantity: string;
     }>({
         category_id: '',
         name: '',
-        sku: '',
         brand: '',
-        size: '',
         cost_price: '',
         selling_price: '',
         description: '',
+        status: 'active',
+        size: '',
+        color: '',
+        sku: '',
+        barcode: '',
+        stock_quantity: '',
+        minimum_quantity: '',
+    });
+
+    const variantForm = useForm<{
+        size: string;
+        color: string;
+        sku: string;
+        barcode: string;
+        price_adjustment: string;
+        status: 'active' | 'inactive';
+        stock_quantity: string;
+        minimum_quantity: string;
+    }>({
+        size: '',
+        color: '',
+        sku: '',
+        barcode: '',
+        price_adjustment: '0',
         status: 'active',
         stock_quantity: '',
         minimum_quantity: '',
@@ -98,13 +150,15 @@ export default function ProductsIndex() {
         setData({
             category_id: product.category_id?.toString() ?? '',
             name: product.name,
-            sku: product.sku ?? '',
             brand: product.brand ?? '',
-            size: product.size ?? '',
             cost_price: product.cost_price,
             selling_price: product.selling_price,
             description: product.description ?? '',
             status: product.status,
+            size: '',
+            color: '',
+            sku: '',
+            barcode: '',
             stock_quantity: '',
             minimum_quantity: '',
         });
@@ -149,6 +203,57 @@ export default function ProductsIndex() {
         }
     };
 
+    const openVariants = (product: Product) => {
+        setVariantsProductId(product.id);
+    };
+
+    const openCreateVariant = () => {
+        setEditingVariant(null);
+        variantForm.reset();
+        variantForm.setData('status', 'active');
+        setVariantDialogOpen(true);
+    };
+
+    const openEditVariant = (variant: Variant) => {
+        setEditingVariant(variant);
+        variantForm.setData({
+            size: variant.size ?? '',
+            color: variant.color ?? '',
+            sku: variant.sku,
+            barcode: variant.barcode ?? '',
+            price_adjustment: variant.price_adjustment,
+            status: variant.status,
+            stock_quantity: '',
+            minimum_quantity: '',
+        });
+        setVariantDialogOpen(true);
+    };
+
+    const handleVariantSubmit: FormEventHandler = (e) => {
+        e.preventDefault();
+        if (!variantsProduct) return;
+        if (editingVariant) {
+            variantForm.put(`/admin/variants/${editingVariant.id}`, {
+                preserveScroll: true,
+                onSuccess: () => setVariantDialogOpen(false),
+            });
+        } else {
+            variantForm.post(`/admin/products/${variantsProduct.id}/variants`, {
+                preserveScroll: true,
+                onSuccess: () => setVariantDialogOpen(false),
+            });
+        }
+    };
+
+    const handleDeleteVariant = () => {
+        if (deleteVariantId) {
+            deleteVariantForm.delete(`/admin/variants/${deleteVariantId}`, {
+                preserveScroll: true,
+                onSuccess: () => setDeleteVariantId(null),
+            });
+        }
+    };
+
     const columns: Column<Product>[] = [
         {
             key: 'name',
@@ -161,9 +266,9 @@ export default function ProductsIndex() {
             ),
         },
         {
-            key: 'sku',
-            header: 'SKU',
-            render: (p) => <span className="font-mono text-xs text-muted-foreground">{p.sku ?? '—'}</span>,
+            key: 'variants',
+            header: 'Varian',
+            render: (p) => <Badge variant="outline">{p.variants.length} varian</Badge>,
         },
         {
             key: 'category',
@@ -172,20 +277,21 @@ export default function ProductsIndex() {
         },
         {
             key: 'price',
-            header: 'Harga',
+            header: 'Harga Dasar',
             render: (p) => <span className="font-semibold">{formatCurrency(Number(p.selling_price))}</span>,
         },
         {
             key: 'stock',
-            header: 'Stok',
-            render: (p) =>
-                p.stock ? (
-                    <Badge variant={p.stock.quantity <= 0 ? 'destructive' : p.stock.quantity <= (p.stock.minimum_quantity || 5) ? 'warning' : 'success'}>
-                        {p.stock.quantity} unit
+            header: 'Total Stok',
+            render: (p) => {
+                const stock = totalStock(p);
+                const min = minStock(p);
+                return (
+                    <Badge variant={stock <= 0 ? 'destructive' : stock <= min ? 'warning' : 'success'}>
+                        {stock} unit
                     </Badge>
-                ) : (
-                    <Badge variant="outline">Tidak ada stok</Badge>
-                ),
+                );
+            },
         },
         {
             key: 'status',
@@ -199,7 +305,10 @@ export default function ProductsIndex() {
             className: 'text-right',
             render: (p) => (
                 <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
+                    <Button variant="ghost" size="icon" onClick={() => openVariants(p)} title="Kelola Varian">
+                        <Layers className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)} title="Edit Produk">
                         <Edit className="h-4 w-4" />
                     </Button>
                     {p.status !== 'active' && (
@@ -231,7 +340,7 @@ export default function ProductsIndex() {
                     <DataTable
                         data={filteredProducts}
                         columns={columns}
-                        searchKeys={['name', 'sku', 'brand']}
+                        searchKeys={['name', 'brand']}
                         searchPlaceholder="Cari produk..."
                         emptyIcon={Package}
                         emptyMessage="Produk tidak ditemukan. Klik 'Tambah Produk' untuk membuat baru."
@@ -269,7 +378,7 @@ export default function ProductsIndex() {
                     <DialogHeader>
                         <DialogTitle>{editingProduct ? 'Edit Produk' : 'Tambah Produk'}</DialogTitle>
                         <DialogDescription>
-                            {editingProduct ? 'Perbarui informasi produk.' : 'Buat produk baru di katalog Anda.'}
+                            {editingProduct ? 'Perbarui informasi dasar produk.' : 'Buat produk baru beserta varian pertamanya.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -281,17 +390,8 @@ export default function ProductsIndex() {
                                 {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="sku">SKU (Opsional)</Label>
-                                <Input id="sku" value={data.sku} onChange={(e) => setData('sku', e.target.value)} placeholder="Auto-generate jika dikosongkan" />
-                                {errors.sku && <p className="text-xs text-destructive">{errors.sku}</p>}
-                            </div>
-                            <div className="space-y-2">
                                 <Label htmlFor="brand">Brand</Label>
                                 <Input id="brand" value={data.brand} onChange={(e) => setData('brand', e.target.value)} placeholder="e.g. Nike" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="size">Size</Label>
-                                <Input id="size" value={data.size} onChange={(e) => setData('size', e.target.value)} placeholder="e.g. 42" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Kategori</Label>
@@ -314,7 +414,7 @@ export default function ProductsIndex() {
                                 {errors.cost_price && <p className="text-xs text-destructive">{errors.cost_price}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="selling_price">Harga Jual *</Label>
+                                <Label htmlFor="selling_price">Harga Jual Dasar *</Label>
                                 <Input id="selling_price" type="text" inputMode="numeric" value={sellingPriceDisplay} onChange={(e) => {
                                     const formatted = formatNumberInput(e.target.value);
                                     setSellingPriceDisplay(formatted);
@@ -323,8 +423,29 @@ export default function ProductsIndex() {
                                 {errors.selling_price && <p className="text-xs text-destructive">{errors.selling_price}</p>}
                                 {priceError && <p className="text-xs text-destructive">{priceError}</p>}
                             </div>
-                            {!editingProduct && (
-                                <>
+                        </div>
+
+                        {!editingProduct && (
+                            <div className="space-y-3 rounded-lg border border-dashed border-border p-3">
+                                <p className="text-xs font-semibold text-muted-foreground">Varian Pertama</p>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="size">Size</Label>
+                                        <Input id="size" value={data.size} onChange={(e) => setData('size', e.target.value)} placeholder="e.g. 42" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="color">Warna</Label>
+                                        <Input id="color" value={data.color} onChange={(e) => setData('color', e.target.value)} placeholder="e.g. Hitam" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="sku">SKU (Opsional)</Label>
+                                        <Input id="sku" value={data.sku} onChange={(e) => setData('sku', e.target.value)} placeholder="Auto-generate jika dikosongkan" />
+                                        {errors.sku && <p className="text-xs text-destructive">{errors.sku}</p>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="barcode">Barcode (Opsional)</Label>
+                                        <Input id="barcode" value={data.barcode} onChange={(e) => setData('barcode', e.target.value)} placeholder="Kode barcode" />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="stock_quantity">Stok Awal</Label>
                                         <Input id="stock_quantity" type="number" value={data.stock_quantity} onChange={(e) => setData('stock_quantity', e.target.value)} placeholder="0" />
@@ -333,9 +454,9 @@ export default function ProductsIndex() {
                                         <Label htmlFor="minimum_quantity">Stok Minimum</Label>
                                         <Input id="minimum_quantity" type="number" value={data.minimum_quantity} onChange={(e) => setData('minimum_quantity', e.target.value)} placeholder="0" />
                                     </div>
-                                </>
-                            )}
-                        </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <Label htmlFor="description">Deskripsi</Label>
@@ -363,12 +484,157 @@ export default function ProductsIndex() {
                     <DialogHeader>
                         <DialogTitle>Hapus Produk?</DialogTitle>
                         <DialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Produk dan data stoknya akan dihapus secara permanen.
+                            Tindakan ini tidak dapat dibatalkan. Produk dan seluruh variannya akan dihapus secara permanen.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>Batal</Button>
                         <Button type="button" variant="destructive" onClick={handleDelete}>Hapus</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Manage Variants Dialog */}
+            <Dialog open={variantsProduct !== null} onOpenChange={(open) => !open && setVariantsProductId(null)}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Varian — {variantsProduct?.name}</DialogTitle>
+                        <DialogDescription>Kelola size, warna, SKU, barcode, dan stok per varian.</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div className="flex justify-end">
+                            <Button variant="gradient" size="sm" onClick={openCreateVariant}>
+                                <Plus className="h-4 w-4" />Tambah Varian
+                            </Button>
+                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Varian</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead>Penyesuaian Harga</TableHead>
+                                    <TableHead>Stok</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {variantsProduct?.variants.map((v) => (
+                                    <TableRow key={v.id}>
+                                        <TableCell className="font-medium">{variantLabel(v)}</TableCell>
+                                        <TableCell className="font-mono text-xs text-muted-foreground">{v.sku}</TableCell>
+                                        <TableCell>{formatCurrency(Number(v.price_adjustment))}</TableCell>
+                                        <TableCell>
+                                            {v.stock ? (
+                                                <Badge variant={v.stock.quantity <= 0 ? 'destructive' : v.stock.quantity <= v.stock.minimum_quantity ? 'warning' : 'success'}>
+                                                    {v.stock.quantity} unit
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline">—</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={v.status === 'active' ? 'success' : 'destructive'}>{v.status === 'active' ? 'Aktif' : 'Nonaktif'}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-1">
+                                                <Button variant="ghost" size="icon" onClick={() => openEditVariant(v)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => setDeleteVariantId(v.id)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {variantsProduct?.variants.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                                            Belum ada varian.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setVariantsProductId(null)}>Tutup</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add/Edit Variant Dialog */}
+            <Dialog open={variantDialogOpen} onOpenChange={setVariantDialogOpen}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{editingVariant ? 'Edit Varian' : 'Tambah Varian'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleVariantSubmit} className="space-y-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="v_size">Size</Label>
+                                <Input id="v_size" value={variantForm.data.size} onChange={(e) => variantForm.setData('size', e.target.value)} placeholder="e.g. 42" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="v_color">Warna</Label>
+                                <Input id="v_color" value={variantForm.data.color} onChange={(e) => variantForm.setData('color', e.target.value)} placeholder="e.g. Hitam" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="v_sku">SKU {editingVariant ? '*' : '(Opsional)'}</Label>
+                                <Input id="v_sku" value={variantForm.data.sku} onChange={(e) => variantForm.setData('sku', e.target.value)} placeholder="Auto-generate jika dikosongkan" />
+                                {variantForm.errors.sku && <p className="text-xs text-destructive">{variantForm.errors.sku}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="v_barcode">Barcode (Opsional)</Label>
+                                <Input id="v_barcode" value={variantForm.data.barcode} onChange={(e) => variantForm.setData('barcode', e.target.value)} placeholder="Kode barcode" />
+                                {variantForm.errors.barcode && <p className="text-xs text-destructive">{variantForm.errors.barcode}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="v_price_adjustment">Penyesuaian Harga</Label>
+                                <Input id="v_price_adjustment" type="number" value={variantForm.data.price_adjustment} onChange={(e) => variantForm.setData('price_adjustment', e.target.value)} placeholder="0" />
+                            </div>
+                            {!editingVariant && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="v_stock_quantity">Stok Awal</Label>
+                                        <Input id="v_stock_quantity" type="number" value={variantForm.data.stock_quantity} onChange={(e) => variantForm.setData('stock_quantity', e.target.value)} placeholder="0" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="v_minimum_quantity">Stok Minimum</Label>
+                                        <Input id="v_minimum_quantity" type="number" value={variantForm.data.minimum_quantity} onChange={(e) => variantForm.setData('minimum_quantity', e.target.value)} placeholder="0" />
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Label htmlFor="v_status">Aktif</Label>
+                            <Switch checked={variantForm.data.status === 'active'} onCheckedChange={(checked) => variantForm.setData('status', checked ? 'active' : 'inactive')} />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setVariantDialogOpen(false)}>Batal</Button>
+                            <Button type="submit" variant="gradient" disabled={variantForm.processing}>
+                                {variantForm.processing ? 'Menyimpan...' : editingVariant ? 'Perbarui' : 'Tambah'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Variant Confirmation */}
+            <Dialog open={deleteVariantId !== null} onOpenChange={(open) => !open && setDeleteVariantId(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Hapus Varian?</DialogTitle>
+                        <DialogDescription>
+                            Tindakan ini tidak dapat dibatalkan. Jika varian pernah terjual, nonaktifkan saja alih-alih menghapus.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setDeleteVariantId(null)}>Batal</Button>
+                        <Button type="button" variant="destructive" onClick={handleDeleteVariant}>Hapus</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

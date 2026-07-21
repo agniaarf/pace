@@ -41,7 +41,9 @@ import { formatCurrency } from '@/lib/utils';
 interface CashierProduct {
     id: number;
     name: string;
+    variant_label: string;
     sku: string | null;
+    barcode: string | null;
     brand: string | null;
     selling_price: number;
     stock: number;
@@ -119,7 +121,7 @@ export default function Cashier() {
     const currentStepIndex = STEPS.findIndex(s => s.label.toLowerCase() === step);
 
     const { setData, post, processing, reset } = useForm<{
-        items: { product_id: number; quantity: number; unit_price: number }[];
+        items: { variant_id: number; quantity: number; unit_price: number }[];
         customer_id: number | null;
         payment_method_id: number | null;
         amount_paid: number;
@@ -131,7 +133,11 @@ export default function Cashier() {
     });
 
     const filteredProducts = useMemo(() =>
-        products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase())),
+        products.filter(p =>
+            p.name.toLowerCase().includes(search.toLowerCase()) ||
+            p.variant_label.toLowerCase().includes(search.toLowerCase()) ||
+            p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+            p.barcode?.toLowerCase().includes(search.toLowerCase())),
         [products, search]);
 
     const filteredCustomers = useMemo(() =>
@@ -142,6 +148,7 @@ export default function Cashier() {
         [customers, customerSearch]);
 
     const addToCart = (product: CashierProduct) => {
+        if (product.stock <= 0) return;
         setCart(prev => {
             const existing = prev.find(i => i.product.id === product.id);
             if (existing) {
@@ -151,6 +158,11 @@ export default function Cashier() {
             return [...prev, { product, quantity: 1 }];
         });
     };
+
+    const displayName = (product: CashierProduct) =>
+        product.variant_label && product.variant_label !== 'Default'
+            ? `${product.name} (${product.variant_label})`
+            : product.name;
 
     const updateQty = (productId: number, delta: number) => {
         setCart(prev => prev
@@ -209,7 +221,7 @@ export default function Cashier() {
     const handleCheckout = () => {
         setData({
             items: cart.map(i => ({
-                product_id: i.product.id,
+                variant_id: i.product.id,
                 quantity: i.quantity,
                 unit_price: i.product.selling_price,
             })),
@@ -235,7 +247,7 @@ export default function Cashier() {
                         change_amount: Math.max(0, change),
                         payment_method: '',
                         customer_name: selectedCustomer?.full_name ?? null,
-                        items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, unit_price: i.product.selling_price, subtotal: i.product.selling_price * i.quantity })),
+                        items: cart.map(i => ({ name: displayName(i.product), quantity: i.quantity, unit_price: i.product.selling_price, subtotal: i.product.selling_price * i.quantity })),
                         created_at: new Date().toISOString(),
                     });
                 }
@@ -313,17 +325,24 @@ export default function Cashier() {
                                 const inCart = cart.find(i => i.product.id === p.id);
                                 const hasDiscount = !!getProductDiscount(p);
                                 const finalPrice = discountedPrice(p);
+                                const outOfStock = p.stock <= 0;
                                 return (
                                     <button
                                         key={p.id}
                                         onClick={() => addToCart(p)}
-                                        className={`relative rounded-xl border p-3 text-left transition-all hover:shadow-sm ${
-                                            inCart ? 'border-primary bg-accent' :
+                                        disabled={outOfStock}
+                                        className={`relative rounded-xl border p-3 text-left transition-all ${
+                                            outOfStock ? 'cursor-not-allowed border-border bg-muted/40 opacity-60' :
+                                            'hover:shadow-sm ' + (inCart ? 'border-primary bg-accent' :
                                             hasDiscount ? 'border-red-200 bg-red-50/30 hover:border-red-300' :
-                                            'border-border bg-card hover:border-orange-300'
+                                            'border-border bg-card hover:border-orange-300')
                                         }`}
                                     >
-                                        {hasDiscount && (
+                                        {outOfStock ? (
+                                            <span className="absolute right-2 top-2 rounded-md bg-muted-foreground/80 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                                Habis
+                                            </span>
+                                        ) : hasDiscount && (
                                             <span className="absolute right-2 top-2 rounded-md bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                                                 {discountLabel(p)}
                                             </span>
@@ -331,13 +350,13 @@ export default function Cashier() {
                                         <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
                                             <Package className="h-4 w-4 text-muted-foreground" />
                                         </div>
-                                        <div className="mb-2 text-xs font-semibold leading-tight text-foreground">{p.name}</div>
+                                        <div className="mb-2 text-xs font-semibold leading-tight text-foreground">{displayName(p)}</div>
                                         <div className="flex items-end justify-between gap-1">
                                             <div>
-                                                <div className={`font-mono text-sm font-bold leading-tight ${hasDiscount ? 'text-red-500' : 'text-primary'}`}>
+                                                <div className={`font-mono text-sm font-bold leading-tight ${hasDiscount && !outOfStock ? 'text-red-500' : 'text-primary'}`}>
                                                     {formatCurrency(finalPrice)}
                                                 </div>
-                                                {hasDiscount && (
+                                                {hasDiscount && !outOfStock && (
                                                     <div className="font-mono text-xs leading-tight text-muted-foreground line-through">
                                                         {formatCurrency(p.selling_price)}
                                                     </div>
@@ -413,7 +432,7 @@ export default function Cashier() {
                             {cart.map(item => (
                                 <div key={item.product.id} className="animate-scale-in rounded-xl border border-border bg-background p-3">
                                     <div className="mb-2 flex items-start justify-between gap-2">
-                                        <div className="text-xs font-semibold leading-tight text-foreground">{item.product.name}</div>
+                                        <div className="text-xs font-semibold leading-tight text-foreground">{displayName(item.product)}</div>
                                         <button onClick={() => removeFromCart(item.product.id)} className="flex-shrink-0 text-muted-foreground hover:text-destructive">
                                             <X className="h-3 w-3" />
                                         </button>
@@ -490,7 +509,7 @@ export default function Cashier() {
                                     <div className="mb-3 space-y-2">
                                         {cart.map(item => (
                                             <div key={item.product.id} className="flex justify-between text-sm">
-                                                <span>{item.product.name} <span className="text-muted-foreground">×{item.quantity}</span></span>
+                                                <span>{displayName(item.product)} <span className="text-muted-foreground">×{item.quantity}</span></span>
                                                 <span className="font-mono">{formatCurrency(item.product.selling_price * item.quantity)}</span>
                                             </div>
                                         ))}

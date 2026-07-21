@@ -28,14 +28,19 @@ import type { PaginatedResponse, PageProps } from '@/types';
 
 interface StockItem {
     id: number;
-    product_id: number;
+    variant_id: number;
     quantity: number;
     minimum_quantity: number;
-    product: {
+    variant: {
         id: number;
-        name: string;
-        sku: string | null;
-        category: { name: string } | null;
+        sku: string;
+        size: string | null;
+        color: string | null;
+        product: {
+            id: number;
+            name: string;
+            category: { name: string } | null;
+        };
     };
 }
 
@@ -58,6 +63,11 @@ export default function StockIndex() {
     const openAdjust = (stock: StockItem) => {
         setAdjustStock(stock);
         reset();
+    };
+
+    const variantLabel = (stock: StockItem) => {
+        const parts = [stock.variant.size, stock.variant.color].filter(Boolean);
+        return parts.length ? `${stock.variant.product.name} (${parts.join(' / ')})` : stock.variant.product.name;
     };
 
     const handleSubmit: FormEventHandler = (e) => {
@@ -131,9 +141,9 @@ export default function StockIndex() {
                                     stocks.data.map((stock, idx) => (
                                         <TableRow key={stock.id}>
                                             <TableCell className="text-muted-foreground">{(stocks.current_page - 1) * stocks.per_page + idx + 1}</TableCell>
-                                            <TableCell className="font-medium">{stock.product.name}</TableCell>
-                                            <TableCell className="font-mono text-xs text-muted-foreground">{stock.product.sku ?? '—'}</TableCell>
-                                            <TableCell>{stock.product.category?.name ?? '—'}</TableCell>
+                                            <TableCell className="font-medium">{variantLabel(stock)}</TableCell>
+                                            <TableCell className="font-mono text-xs text-muted-foreground">{stock.variant.sku}</TableCell>
+                                            <TableCell>{stock.variant.product.category?.name ?? '—'}</TableCell>
                                             <TableCell className="font-bold text-lg">{stock.quantity}</TableCell>
                                             <TableCell className="text-muted-foreground">{stock.minimum_quantity}</TableCell>
                                             <TableCell>{getStockBadge(stock)}</TableCell>
@@ -161,7 +171,7 @@ export default function StockIndex() {
                     <DialogHeader>
                         <DialogTitle>Sesuaikan Stok</DialogTitle>
                         <DialogDescription>
-                            {adjustStock && `Stok saat ini untuk "${adjustStock.product.name}": ${adjustStock.quantity} unit`}
+                            {adjustStock && `Stok saat ini untuk "${variantLabel(adjustStock)}": ${adjustStock.quantity} unit`}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
