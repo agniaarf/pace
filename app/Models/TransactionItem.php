@@ -9,7 +9,7 @@ class TransactionItem extends Model
 {
     protected $fillable = [
         'transaction_id',
-        'product_id',
+        'variant_id',
         'quantity',
         'unit_price',
         'item_discount',
@@ -30,8 +30,8 @@ class TransactionItem extends Model
         return $this->belongsTo(Transaction::class);
     }
 
-    public function product(): BelongsTo
+    public function variant(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

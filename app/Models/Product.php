@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -13,9 +12,7 @@ class Product extends Model
         'category_id',
         'discount_id',
         'name',
-        'sku',
         'brand',
-        'size',
         'cost_price',
         'selling_price',
         'description',
@@ -41,13 +38,8 @@ class Product extends Model
         return $this->belongsTo(Discount::class);
     }
 
-    public function stock(): HasOne
+    public function variants(): HasMany
     {
-        return $this->hasOne(Stock::class);
-    }
-
-    public function transactionItems(): HasMany
-    {
-        return $this->hasMany(TransactionItem::class);
+        return $this->hasMany(ProductVariant::class);
     }
 }
