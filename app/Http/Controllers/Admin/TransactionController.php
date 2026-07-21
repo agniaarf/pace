@@ -12,7 +12,7 @@ class TransactionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $transactions = Transaction::with(['cashier', 'customer', 'items.product', 'paymentMethod'])
+        $transactions = Transaction::with(['cashier', 'customer', 'items.variant.product', 'paymentMethod'])
             ->latest('created_at')
             ->limit(100)
             ->get()
@@ -28,7 +28,7 @@ class TransactionController extends Controller
                 'payment_method_label' => $t->paymentMethod?->label ?? 'Tunai',
                 'item_count' => $t->items->count(),
                 'items' => $t->items->map(fn ($item) => [
-                    'name' => $item->product->name,
+                    'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) $item->subtotal,
@@ -47,10 +47,24 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction): Response
     {
-        $transaction->load(['cashier', 'customer', 'items.product', 'paymentMethod']);
+        $transaction->load(['cashier', 'customer', 'items.variant.product', 'paymentMethod']);
+
+        $data = $transaction->toArray();
+        $data['items'] = $transaction->items->map(fn ($item) => [
+            'id' => $item->id,
+            'quantity' => $item->quantity,
+            'unit_price' => $item->unit_price,
+            'item_discount' => $item->item_discount,
+            'subtotal' => $item->subtotal,
+            'product' => [
+                'id' => $item->variant->product->id,
+                'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
+                'sku' => $item->variant->sku,
+            ],
+        ]);
 
         return Inertia::render('Admin/Transactions/Show', [
-            'transaction' => $transaction,
+            'transaction' => $data,
         ]);
     }
 }

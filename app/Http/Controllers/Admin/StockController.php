@@ -17,9 +17,10 @@ class StockController extends Controller
         $search = $request->get('search');
         $filter = $request->get('filter');
 
-        $stocks = Stock::with('product.category')
-            ->whereHas('product', function ($q) use ($search) {
-                $q->when($search, fn ($sq) => $sq->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"));
+        $stocks = Stock::with('variant.product.category')
+            ->whereHas('variant', function ($q) use ($search) {
+                $q->when($search, fn ($sq) => $sq->where('sku', 'like', "%{$search}%")
+                    ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%")));
             })
             ->when($filter === 'low', fn ($q) => $q->whereColumn('quantity', '<=', 'minimum_quantity'))
             ->when($filter === 'out', fn ($q) => $q->where('quantity', '<=', 0))
@@ -35,28 +36,28 @@ class StockController extends Controller
 
     public function alerts(): Response
     {
-        $lowStock = Stock::with('product.category')
+        $lowStock = Stock::with('variant.product.category')
             ->whereColumn('quantity', '<=', 'minimum_quantity')
             ->where('quantity', '>', 0)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'product_name' => $s->product->name,
-                'sku' => $s->product->sku,
-                'category' => $s->product->category?->name,
+                'product_name' => $s->variant->product->name . ($s->variant->label() !== 'Default' ? ' (' . $s->variant->label() . ')' : ''),
+                'sku' => $s->variant->sku,
+                'category' => $s->variant->product->category?->name,
                 'quantity' => $s->quantity,
                 'minimum_quantity' => $s->minimum_quantity,
                 'status' => 'low',
             ]);
 
-        $outOfStock = Stock::with('product.category')
+        $outOfStock = Stock::with('variant.product.category')
             ->where('quantity', '<=', 0)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'product_name' => $s->product->name,
-                'sku' => $s->product->sku,
-                'category' => $s->product->category?->name,
+                'product_name' => $s->variant->product->name . ($s->variant->label() !== 'Default' ? ' (' . $s->variant->label() . ')' : ''),
+                'sku' => $s->variant->sku,
+                'category' => $s->variant->product->category?->name,
                 'quantity' => $s->quantity,
                 'minimum_quantity' => $s->minimum_quantity,
                 'status' => 'out',
@@ -87,7 +88,7 @@ class StockController extends Controller
         $stock->save();
 
         StockMovement::create([
-            'product_id' => $stock->product_id,
+            'variant_id' => $stock->variant_id,
             'stock_id' => $stock->id,
             'movement_type' => $validated['adjustment_type'] === 'subtract' ? 'out' : 'in',
             'quantity_before' => $before,

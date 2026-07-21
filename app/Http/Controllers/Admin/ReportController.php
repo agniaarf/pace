@@ -38,7 +38,8 @@ class ReportController extends Controller
             ]);
 
         $topProducts = Transaction::join('transaction_items', 'transactions.id', '=', 'transaction_items.transaction_id')
-            ->join('products', 'transaction_items.product_id', '=', 'products.id')
+            ->join('product_variants', 'transaction_items.variant_id', '=', 'product_variants.id')
+            ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->where('transactions.status', 'completed')
             ->whereDate('transactions.transaction_date', '>=', now()->subDays($days))
             ->selectRaw('products.name, SUM(transaction_items.quantity) as total_sold, SUM(transaction_items.subtotal) as total_revenue')
@@ -68,7 +69,7 @@ class ReportController extends Controller
     {
         $days = (int) $request->get('days', 30);
 
-        $transactions = Transaction::with(['cashier', 'customer', 'items.product'])
+        $transactions = Transaction::with(['cashier', 'customer', 'items'])
             ->where('status', 'completed')
             ->whereDate('transaction_date', '>=', now()->subDays($days))
             ->orderByDesc('transaction_date')

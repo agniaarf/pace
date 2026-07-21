@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppMaster;
 use App\Models\Customer;
 use App\Models\Discount;
-use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Transaction;
@@ -21,24 +21,26 @@ class CashierController extends Controller
 {
     public function index(): Response
     {
-        $products = Product::with(['category', 'stock', 'discount'])
+        $variants = ProductVariant::with(['product.category', 'product.discount', 'stock'])
             ->where('status', 'active')
-            ->whereHas('stock', fn ($q) => $q->where('quantity', '>', 0))
-            ->orderBy('name')
+            ->whereHas('product', fn ($q) => $q->where('status', 'active'))
+            ->orderBy('sku')
             ->get()
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'sku' => $p->sku,
-                'brand' => $p->brand,
-                'selling_price' => (float) $p->selling_price,
-                'stock' => $p->stock?->quantity ?? 0,
-                'category' => $p->category?->name,
-                'discount' => $p->discount ? [
-                    'id' => $p->discount->id,
-                    'name' => $p->discount->name,
-                    'type' => $p->discount->type,
-                    'value' => (float) $p->discount->value,
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'name' => $v->product->name,
+                'variant_label' => $v->label(),
+                'sku' => $v->sku,
+                'barcode' => $v->barcode,
+                'brand' => $v->product->brand,
+                'selling_price' => $v->sellingPrice(),
+                'stock' => $v->stock?->quantity ?? 0,
+                'category' => $v->product->category?->name,
+                'discount' => $v->product->discount ? [
+                    'id' => $v->product->discount->id,
+                    'name' => $v->product->discount->name,
+                    'type' => $v->product->discount->type,
+                    'value' => (float) $v->product->discount->value,
                 ] : null,
             ]);
 
@@ -57,7 +59,7 @@ class CashierController extends Controller
             ->get(['id', 'name', 'type', 'value', 'applies_to', 'target_ids']);
 
         return Inertia::render('Kasir/Cashier', [
-            'products' => $products,
+            'products' => $variants,
             'customers' => $customers,
             'paymentMethods' => $paymentMethods,
             'activeDiscounts' => $activeDiscounts,
@@ -68,7 +70,7 @@ class CashierController extends Controller
     {
         $cashierId = $request->user()->id;
 
-        $transactions = Transaction::with(['customer', 'items', 'paymentMethod'])
+        $transactions = Transaction::with(['customer', 'items.variant.product', 'paymentMethod'])
             ->where('cashier_id', $cashierId)
             ->latest('created_at')
             ->limit(50)
@@ -84,7 +86,7 @@ class CashierController extends Controller
                 'payment_method_label' => $t->paymentMethod?->label ?? 'Tunai',
                 'item_count' => $t->items->count(),
                 'items' => $t->items->map(fn ($item) => [
-                    'name' => $item->product->name,
+                    'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) $item->subtotal,
@@ -128,7 +130,7 @@ class CashierController extends Controller
             'customer_id' => ['nullable', 'exists:customers,id'],
             'payment_method_id' => ['nullable', 'exists:app_master,id'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.variant_id' => ['required', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'amount_paid' => ['required', 'numeric', 'min:0'],
@@ -140,18 +142,18 @@ class CashierController extends Controller
             $itemsData = [];
 
             foreach ($validated['items'] as $item) {
-                $product = Product::with('stock')->findOrFail($item['product_id']);
-                $stock = $product->stock;
+                $variant = ProductVariant::with('stock')->findOrFail($item['variant_id']);
+                $stock = $variant->stock;
 
                 if (!$stock || $stock->quantity < $item['quantity']) {
-                    return back()->with('error', "Stok tidak mencukupi untuk {$product->name}.");
+                    return back()->with('error', "Stok tidak mencukupi untuk {$variant->product->name}.");
                 }
 
                 $lineTotal = $item['unit_price'] * $item['quantity'];
                 $subtotal += $lineTotal;
 
                 $itemsData[] = [
-                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'item_discount' => 0,
@@ -165,13 +167,16 @@ class CashierController extends Controller
                 ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', today()))
                 ->get();
 
+            $variantProductMap = ProductVariant::whereIn('id', collect($itemsData)->pluck('variant_id'))
+                ->pluck('product_id', 'id');
+
             foreach ($activeDiscounts as $discount) {
                 if ($discount->applies_to === 'all') {
                     $base = $subtotal;
                 } elseif ($discount->applies_to === 'product') {
                     $targetIds = $discount->target_ids ?? [];
                     $base = collect($itemsData)
-                        ->filter(fn ($i) => in_array($i['product_id'], $targetIds))
+                        ->filter(fn ($i) => in_array($variantProductMap[$i['variant_id']] ?? null, $targetIds))
                         ->sum('subtotal');
                 } else {
                     $base = 0;
@@ -213,13 +218,13 @@ class CashierController extends Controller
                 $item['transaction_id'] = $transaction->id;
                 TransactionItem::create($item);
 
-                $stock = Stock::where('product_id', $item['product_id'])->first();
+                $stock = Stock::where('variant_id', $item['variant_id'])->first();
                 $before = $stock->quantity;
                 $stock->quantity -= $item['quantity'];
                 $stock->save();
 
                 StockMovement::create([
-                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'],
                     'stock_id' => $stock->id,
                     'transaction_id' => $transaction->id,
                     'movement_type' => 'out',
@@ -236,7 +241,7 @@ class CashierController extends Controller
                 $customer->increment('total_spent', $totalAmount);
             }
 
-            $transaction->load('items.product');
+            $transaction->load('items.variant.product');
 
             $paymentMethodLabel = AppMaster::where('id', $validated['payment_method_id'])->value('label') ?? 'Tunai';
             $customerName = $validated['customer_id'] ? Customer::where('id', $validated['customer_id'])->value('full_name') : null;
@@ -252,7 +257,7 @@ class CashierController extends Controller
                 'payment_method' => $paymentMethodLabel,
                 'customer_name' => $customerName,
                 'items' => $transaction->items->map(fn ($item) => [
-                    'name' => $item->product->name,
+                    'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
                     'quantity' => $item->quantity,
                     'unit_price' => (float) $item->unit_price,
                     'subtotal' => (float) $item->subtotal,

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\Stock;
+use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +16,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $products = Product::with(['category', 'stock'])
+        $products = Product::with(['category', 'variants.stock'])
             ->latest()
             ->get();
 
@@ -33,31 +33,49 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => ['nullable', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:150'],
-            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku'],
             'brand' => ['nullable', 'string', 'max:100'],
-            'size' => ['nullable', 'string', 'max:50'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0', 'gt:cost_price'],
             'description' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'size' => ['nullable', 'string', 'max:50'],
+            'color' => ['nullable', 'string', 'max:50'],
+            'sku' => ['nullable', 'string', 'max:100', 'unique:product_variants,sku'],
+            'barcode' => ['nullable', 'string', 'max:100', 'unique:product_variants,barcode'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
             'minimum_quantity' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $stockData = [
-            'quantity' => $validated['stock_quantity'] ?? 0,
-            'minimum_quantity' => $validated['minimum_quantity'] ?? 0,
-        ];
-        unset($validated['stock_quantity'], $validated['minimum_quantity']);
-
-        if (empty($validated['sku'])) {
+        $sku = $validated['sku'] ?? null;
+        if (empty($sku)) {
             do {
-                $validated['sku'] = 'PRD-' . str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            } while (Product::where('sku', $validated['sku'])->exists());
+                $sku = 'VAR-' . str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            } while (ProductVariant::where('sku', $sku)->exists());
         }
 
-        $product = Product::create($validated);
-        $product->stock()->create($stockData);
+        $product = Product::create([
+            'category_id' => $validated['category_id'] ?? null,
+            'name' => $validated['name'],
+            'brand' => $validated['brand'] ?? null,
+            'cost_price' => $validated['cost_price'],
+            'selling_price' => $validated['selling_price'],
+            'description' => $validated['description'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        $variant = $product->variants()->create([
+            'size' => $validated['size'] ?? null,
+            'color' => $validated['color'] ?? null,
+            'sku' => $sku,
+            'barcode' => $validated['barcode'] ?? null,
+            'price_adjustment' => 0,
+            'status' => $validated['status'],
+        ]);
+
+        $variant->stock()->create([
+            'quantity' => $validated['stock_quantity'] ?? 0,
+            'minimum_quantity' => $validated['minimum_quantity'] ?? 0,
+        ]);
 
         return back()->with('success', 'Produk berhasil dibuat.');
     }
@@ -67,9 +85,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => ['nullable', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:150'],
-            'sku' => ['nullable', 'string', 'max:100', Rule::unique('products', 'sku')->ignore($product->id)],
             'brand' => ['nullable', 'string', 'max:100'],
-            'size' => ['nullable', 'string', 'max:50'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0', 'gt:cost_price'],
             'description' => ['nullable', 'string'],
@@ -83,7 +99,9 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->transactionItems()->exists()) {
+        $hasSales = $product->variants()->whereHas('transactionItems')->exists();
+
+        if ($hasSales) {
             return back()->with('error', 'Produk tidak dapat dihapus karena memiliki riwayat transaksi. Nonaktifkan saja produk ini.');
         }
 

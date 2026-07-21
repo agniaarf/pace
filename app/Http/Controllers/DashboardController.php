@@ -43,14 +43,14 @@ class DashboardController extends Controller
                 'count' => $r->count,
             ]);
 
-        $lowStockItems = Stock::with('product')
+        $lowStockItems = Stock::with('variant.product')
             ->whereColumn('quantity', '<=', 'minimum_quantity')
             ->orWhere('quantity', '<=', 0)
             ->limit(5)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'product_name' => $s->product->name,
+                'product_name' => $s->variant->product->name . ($s->variant->label() !== 'Default' ? ' (' . $s->variant->label() . ')' : ''),
                 'quantity' => $s->quantity,
                 'minimum_quantity' => $s->minimum_quantity,
             ]);
@@ -121,7 +121,7 @@ class DashboardController extends Controller
                 'todayTransactions' => $todayTransactions,
                 'todayRevenue' => $todayRevenue,
                 'totalProducts' => Product::count(),
-                'availableProducts' => Product::whereHas('stock', function ($q) {
+                'availableProducts' => Product::whereHas('variants.stock', function ($q) {
                     $q->where('quantity', '>', 0);
                 })->count(),
                 'transactionDelta' => round($transactionDelta, 1),
