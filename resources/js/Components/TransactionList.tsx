@@ -27,6 +27,12 @@ export interface TransactionItem {
     subtotal: number;
 }
 
+export interface PaymentBreakdown {
+    method_label: string;
+    amount: number;
+    reference_no: string | null;
+}
+
 export interface TransactionData {
     id: number;
     transaction_number: string;
@@ -37,6 +43,7 @@ export interface TransactionData {
     cashier_name?: string;
     payment_method_code: string;
     payment_method_label: string;
+    payments: PaymentBreakdown[];
     item_count: number;
     items: TransactionItem[];
     subtotal: number;
@@ -204,10 +211,19 @@ export function TransactionList({ transactions, showCashier = false }: Transacti
                                         <span>Total</span>
                                         <span className="font-mono text-primary">{formatCurrency(selectedTrx.total_amount)}</span>
                                     </div>
-                                    <div className="flex justify-between text-muted-foreground">
-                                        <span>Bayar ({selectedTrx.payment_method_label})</span>
-                                        <span className="font-mono">{formatCurrency(selectedTrx.amount_paid)}</span>
-                                    </div>
+                                    {selectedTrx.payments && selectedTrx.payments.length > 1 ? (
+                                        selectedTrx.payments.map((p, idx) => (
+                                            <div key={idx} className="flex justify-between text-muted-foreground">
+                                                <span>Bayar ({p.method_label}{p.reference_no ? ` · ${p.reference_no}` : ''})</span>
+                                                <span className="font-mono">{formatCurrency(p.amount)}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex justify-between text-muted-foreground">
+                                            <span>Bayar ({selectedTrx.payment_method_label})</span>
+                                            <span className="font-mono">{formatCurrency(selectedTrx.amount_paid)}</span>
+                                        </div>
+                                    )}
                                     {selectedTrx.change_amount > 0 && (
                                         <div className="flex justify-between font-semibold text-emerald-600">
                                             <span>Kembalian</span>

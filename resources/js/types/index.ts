@@ -16,6 +16,12 @@ export interface AppInfo {
     slogan: string;
 }
 
+export interface PaymentBreakdown {
+    method_label: string;
+    amount: number;
+    reference_no: string | null;
+}
+
 export interface TransactionReceipt {
     transaction_number: string;
     subtotal: number;
@@ -25,6 +31,7 @@ export interface TransactionReceipt {
     amount_paid: number;
     change_amount: number;
     payment_method: string;
+    payments: PaymentBreakdown[];
     customer_name: string | null;
     items: { name: string; quantity: number; unit_price: number; subtotal: number }[];
     created_at: string;

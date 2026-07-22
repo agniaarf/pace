@@ -17,6 +17,12 @@ interface TransactionItem {
     product: { id: number; name: string; sku: string | null };
 }
 
+interface PaymentBreakdown {
+    method_label: string;
+    amount: number;
+    reference_no: string | null;
+}
+
 interface TransactionDetail {
     id: number;
     transaction_number: string;
@@ -31,7 +37,8 @@ interface TransactionDetail {
     change_amount: string;
     cashier: { id: number; username: string } | null;
     customer: { id: number; full_name: string } | null;
-    paymentMethod: { id: number; label: string } | null;
+    payment_method: { id: number; label: string } | null;
+    payments: PaymentBreakdown[];
     items: TransactionItem[];
 }
 
@@ -116,10 +123,21 @@ export default function TransactionShow() {
                                         <span className="font-bold">Total</span>
                                         <span className="font-bold text-primary text-lg">{formatCurrency(Number(transaction.total_amount))}</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Jumlah Dibayar</span>
-                                        <span className="font-medium">{formatCurrency(Number(transaction.amount_paid))}</span>
-                                    </div>
+                                    {transaction.payments && transaction.payments.length > 1 ? (
+                                        <div className="space-y-1 border-t border-border pt-2">
+                                            {transaction.payments.map((p, idx) => (
+                                                <div key={idx} className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">{p.method_label}{p.reference_no ? ` (${p.reference_no})` : ''}</span>
+                                                    <span className="font-medium">{formatCurrency(p.amount)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Jumlah Dibayar</span>
+                                            <span className="font-medium">{formatCurrency(Number(transaction.amount_paid))}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Kembalian</span>
                                         <span className="font-medium">{formatCurrency(Number(transaction.change_amount))}</span>
@@ -148,7 +166,7 @@ export default function TransactionShow() {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Pembayaran</span>
-                                        <span>{transaction.paymentMethod?.label ?? '—'}</span>
+                                        <span>{transaction.payment_method?.label ?? '—'}</span>
                                     </div>
                                     {transaction.notes && (
                                         <div className="pt-2 border-t border-border">

@@ -113,8 +113,10 @@ export default function Cashier() {
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState('');
     const [step, setStep] = useState<CheckoutStep>('produk');
-    const [paymentMethodId, setPaymentMethodId] = useState<number | null>(null);
-    const [cashInput, setCashInput] = useState('');
+    const [payments, setPayments] = useState<{ payment_method_id: number; amount: number; reference_no: string }[]>([]);
+    const [newMethodId, setNewMethodId] = useState<number | null>(null);
+    const [newAmountInput, setNewAmountInput] = useState('');
+    const [newReference, setNewReference] = useState('');
     const [txResult, setTxResult] = useState<TransactionReceipt | null>(null);
     const [newCustomer, setNewCustomer] = useState({ full_name: '', phone: '', email: '' });
 
@@ -123,13 +125,11 @@ export default function Cashier() {
     const { setData, post, processing, reset } = useForm<{
         items: { variant_id: number; quantity: number; unit_price: number }[];
         customer_id: number | null;
-        payment_method_id: number | null;
-        amount_paid: number;
+        payments: { payment_method_id: number; amount: number; reference_no: string | null }[];
     }>({
         items: [],
         customer_id: null,
-        payment_method_id: null,
-        amount_paid: 0,
+        payments: [],
     });
 
     const filteredProducts = useMemo(() =>
@@ -196,8 +196,27 @@ export default function Cashier() {
     const afterDiscount = subtotal - totalDiscount;
     const taxAmount = Math.round(afterDiscount * 0.11);
     const totalAmount = afterDiscount + taxAmount;
-    const cashAmount = parseInt(cashInput.replace(/\D/g, '')) || 0;
-    const change = cashAmount - totalAmount;
+    const totalPaidSoFar = payments.reduce((s, p) => s + p.amount, 0);
+    const remaining = Math.max(0, totalAmount - totalPaidSoFar);
+    const changeAmount = Math.max(0, totalPaidSoFar - totalAmount);
+
+    const newAmount = parseInt(newAmountInput.replace(/\D/g, '')) || 0;
+    const newMethod = paymentMethods.find(m => m.id === newMethodId);
+    const isNewMethodCash = !newMethod || newMethod.code === 'cash';
+
+    const addPayment = () => {
+        if (!newMethodId || newAmount <= 0) return;
+        setPayments(prev => [...prev, { payment_method_id: newMethodId, amount: newAmount, reference_no: newReference }]);
+        setNewMethodId(null);
+        setNewAmountInput('');
+        setNewReference('');
+    };
+
+    const removePayment = (idx: number) => {
+        setPayments(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const methodLabel = (id: number) => paymentMethods.find(m => m.id === id)?.label ?? 'Tunai';
 
     const getProductDiscount = (product: CashierProduct) => {
         if (product.discount) return product.discount;
@@ -226,8 +245,11 @@ export default function Cashier() {
                 unit_price: i.product.selling_price,
             })),
             customer_id: selectedCustomer?.id ?? null,
-            payment_method_id: paymentMethodId,
-            amount_paid: cashAmount || totalAmount,
+            payments: payments.map(p => ({
+                payment_method_id: p.payment_method_id,
+                amount: p.amount,
+                reference_no: p.reference_no || null,
+            })),
         });
         post('/kasir/cashier', {
             preserveScroll: true,
@@ -243,9 +265,14 @@ export default function Cashier() {
                         discount_amount: totalDiscount,
                         tax_amount: taxAmount,
                         total_amount: totalAmount,
-                        amount_paid: cashAmount || totalAmount,
-                        change_amount: Math.max(0, change),
-                        payment_method: '',
+                        amount_paid: totalPaidSoFar,
+                        change_amount: changeAmount,
+                        payment_method: payments[0] ? methodLabel(payments[0].payment_method_id) : '',
+                        payments: payments.map(p => ({
+                            method_label: methodLabel(p.payment_method_id),
+                            amount: p.amount,
+                            reference_no: p.reference_no || null,
+                        })),
                         customer_name: selectedCustomer?.full_name ?? null,
                         items: cart.map(i => ({ name: displayName(i.product), quantity: i.quantity, unit_price: i.product.selling_price, subtotal: i.product.selling_price * i.quantity })),
                         created_at: new Date().toISOString(),
@@ -285,8 +312,10 @@ export default function Cashier() {
         setStep('produk');
         setCart([]);
         setSelectedCustomer(null);
-        setCashInput('');
-        setPaymentMethodId(null);
+        setPayments([]);
+        setNewMethodId(null);
+        setNewAmountInput('');
+        setNewReference('');
         setTxResult(null);
         reset();
     };
@@ -532,28 +561,6 @@ export default function Cashier() {
                                     Hemat {formatCurrency(totalDiscount)} dengan {appliedDiscounts.length} diskon aktif
                                 </div>
                             )}
-                            <div>
-                                <p className="mb-2 text-sm font-semibold text-foreground">Metode Pembayaran</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {paymentMethods.map(m => {
-                                        const Icon = PAYMENT_ICONS[m.code] ?? Banknote;
-                                        return (
-                                            <button
-                                                key={m.id}
-                                                onClick={() => setPaymentMethodId(m.id)}
-                                                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
-                                                    paymentMethodId === m.id ? 'border-primary bg-accent shadow-sm' : 'border-border bg-card hover:border-orange-300'
-                                                }`}
-                                            >
-                                                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${paymentMethodId === m.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
-                                                    <Icon className="h-4 w-4" />
-                                                </div>
-                                                <span className="text-sm font-semibold">{m.label}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
                         </div>
                         <div className="flex w-full flex-shrink-0 flex-col rounded-xl border border-border bg-card lg:w-80 lg:overflow-hidden">
                             <div className="border-b border-border px-5 py-3">
@@ -576,8 +583,8 @@ export default function Cashier() {
                                 )}
                             </div>
                             <div className="space-y-2 border-t border-border p-4">
-                                <Button variant="gradient" className="w-full justify-center" size="lg" disabled={!paymentMethodId} onClick={() => setStep('bayar')}>
-                                    Input Jumlah Uang<ArrowRight className="ml-2 h-4 w-4" />
+                                <Button variant="gradient" className="w-full justify-center" size="lg" onClick={() => setStep('bayar')}>
+                                    Lanjut ke Pembayaran<ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                                 <Button variant="outline" className="w-full justify-center" onClick={() => setStep('produk')}>
                                     <ArrowLeft className="h-4 w-4" />Kembali
@@ -591,39 +598,106 @@ export default function Cashier() {
                 {step === 'bayar' && (
                     <div className="mx-auto max-w-2xl animate-fade-in space-y-4">
                         <div className="rounded-xl border border-border bg-card p-6">
-                            <h3 className="mb-4 text-lg font-bold text-foreground">Pembayaran Tunai</h3>
+                            <h3 className="mb-4 text-lg font-bold text-foreground">Pembayaran</h3>
                             <div className="mb-6 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 p-4 text-white">
                                 <p className="text-sm text-white/80">Total Belanja</p>
                                 <p className="font-mono text-3xl font-bold">{formatCurrency(totalAmount)}</p>
                             </div>
-                            <div className="mb-4">
-                                <Label className="mb-2 block text-sm font-semibold text-foreground">Jumlah Uang Diterima</Label>
-                                <Input type="text" placeholder="Rp 0" value={cashInput ? `Rp ${parseInt(cashInput.replace(/\D/g, '')).toLocaleString('id-ID')}` : ''} onChange={e => setCashInput(e.target.value.replace(/\D/g, ''))} className="font-mono text-2xl font-bold h-14" />
-                            </div>
-                            <div className="mb-6 grid grid-cols-3 gap-2">
-                                {quickCash.map(n => (
-                                    <button key={n} onClick={() => setCashInput(String(n))} className="rounded-lg border border-border bg-card py-3 font-mono text-sm font-semibold transition-all hover:bg-muted hover:border-orange-300">
-                                        {n >= 1000000 ? `${n / 1000000}jt` : `${n / 1000}rb`}
-                                    </button>
-                                ))}
-                                <button onClick={() => setCashInput(String(totalAmount))} className="rounded-lg border-2 border-primary bg-primary/5 py-3 font-mono text-sm font-bold text-primary transition-all hover:bg-primary/10">
-                                    Uang Pas
-                                </button>
-                            </div>
-                            {cashAmount > 0 && (
-                                <div className={`rounded-xl p-4 ${change >= 0 ? 'border border-emerald-200 bg-emerald-50' : 'border border-red-200 bg-red-50'}`}>
-                                    <p className="mb-1 text-sm font-semibold text-muted-foreground">Kembalian</p>
-                                    <p className={`font-mono text-3xl font-bold ${change >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                        {change >= 0 ? formatCurrency(change) : `Kurang ${formatCurrency(Math.abs(change))}`}
-                                    </p>
+
+                            {payments.length > 0 && (
+                                <div className="mb-4 space-y-2">
+                                    {payments.map((p, idx) => {
+                                        const m = paymentMethods.find(pm => pm.id === p.payment_method_id);
+                                        const Icon = PAYMENT_ICONS[m?.code ?? 'cash'] ?? Banknote;
+                                        return (
+                                            <div key={idx} className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-3">
+                                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+                                                    <Icon className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-sm font-semibold text-foreground">{m?.label ?? 'Tunai'}</div>
+                                                    {p.reference_no && <div className="truncate text-xs text-muted-foreground">Ref: {p.reference_no}</div>}
+                                                </div>
+                                                <span className="font-mono text-sm font-bold">{formatCurrency(p.amount)}</span>
+                                                <button onClick={() => removePayment(idx)} className="flex-shrink-0 text-muted-foreground hover:text-destructive">
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
+
+                            <div className="mb-4 space-y-3 rounded-xl border border-dashed border-border p-4">
+                                <p className="text-xs font-semibold text-muted-foreground">Tambah Pembayaran</p>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                    {paymentMethods.map(m => {
+                                        const Icon = PAYMENT_ICONS[m.code] ?? Banknote;
+                                        return (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => setNewMethodId(m.id)}
+                                                className={`flex items-center gap-2 rounded-xl border p-2.5 text-left transition-all ${
+                                                    newMethodId === m.id ? 'border-primary bg-accent shadow-sm' : 'border-border bg-card hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${newMethodId === m.id ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
+                                                    <Icon className="h-3.5 w-3.5" />
+                                                </div>
+                                                <span className="text-xs font-semibold">{m.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div>
+                                    <Label className="mb-1.5 block text-xs font-semibold text-foreground">Jumlah</Label>
+                                    <Input type="text" placeholder="Rp 0" value={newAmountInput ? `Rp ${(parseInt(newAmountInput.replace(/\D/g, '')) || 0).toLocaleString('id-ID')}` : ''} onChange={e => setNewAmountInput(e.target.value.replace(/\D/g, ''))} className="font-mono text-lg font-bold h-11" />
+                                </div>
+                                {isNewMethodCash ? (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {quickCash.map(n => (
+                                            <button key={n} onClick={() => setNewAmountInput(String(n))} className="rounded-lg border border-border bg-card py-2 font-mono text-xs font-semibold transition-all hover:bg-muted hover:border-orange-300">
+                                                {n >= 1000000 ? `${n / 1000000}jt` : `${n / 1000}rb`}
+                                            </button>
+                                        ))}
+                                        <button onClick={() => setNewAmountInput(String(remaining))} className="rounded-lg border-2 border-primary bg-primary/5 py-2 font-mono text-xs font-bold text-primary transition-all hover:bg-primary/10">
+                                            Sisa Tagihan
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <Label className="mb-1.5 block text-xs font-semibold text-foreground">No. Referensi (Opsional)</Label>
+                                        <Input value={newReference} onChange={e => setNewReference(e.target.value)} placeholder="e.g. kode transaksi QRIS" />
+                                    </div>
+                                )}
+                                <Button variant="outline" className="w-full justify-center" disabled={!newMethodId || newAmount <= 0} onClick={addPayment}>
+                                    <Plus className="h-4 w-4" />Tambah Pembayaran
+                                </Button>
+                            </div>
+
+                            <div className={`rounded-xl p-4 ${remaining <= 0 ? 'border border-emerald-200 bg-emerald-50' : 'border border-amber-200 bg-amber-50'}`}>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="font-semibold text-muted-foreground">Total Dibayar</span>
+                                    <span className="font-mono font-bold">{formatCurrency(totalPaidSoFar)}</span>
+                                </div>
+                                {remaining > 0 ? (
+                                    <div className="mt-1 flex items-center justify-between">
+                                        <span className="text-sm font-semibold text-amber-700">Sisa Tagihan</span>
+                                        <span className="font-mono text-xl font-bold text-amber-600">{formatCurrency(remaining)}</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-1 flex items-center justify-between">
+                                        <span className="text-sm font-semibold text-emerald-700">Kembalian</span>
+                                        <span className="font-mono text-xl font-bold text-emerald-600">{formatCurrency(changeAmount)}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="flex gap-3">
                             <Button variant="outline" className="flex-1 justify-center" size="lg" onClick={() => setStep('konfirmasi')}>
                                 <ArrowLeft className="h-4 w-4" />Kembali
                             </Button>
-                            <Button variant="gradient" className="flex-1 justify-center" size="lg" disabled={cashAmount < totalAmount || processing} onClick={handleCheckout}>
+                            <Button variant="gradient" className="flex-1 justify-center" size="lg" disabled={remaining > 0 || payments.length === 0 || processing} onClick={handleCheckout}>
                                 {processing ? <><Loader2 className="h-4 w-4 animate-spin" />Memproses...</> : 'Simpan & Selesai'}
                             </Button>
                         </div>
@@ -672,7 +746,16 @@ export default function Cashier() {
                                     {txResult.discount_amount > 0 && <div className="flex justify-between text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span></div>}
                                     <div className="flex justify-between text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(txResult.tax_amount)}</span></div>
                                     <div className="flex justify-between border-t border-border pt-1 text-sm font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(txResult.total_amount)}</span></div>
-                                    <div className="flex justify-between text-muted-foreground"><span>Bayar ({txResult.payment_method})</span><span className="font-mono">{formatCurrency(txResult.amount_paid)}</span></div>
+                                    {txResult.payments && txResult.payments.length > 1 ? (
+                                        txResult.payments.map((p, idx) => (
+                                            <div key={idx} className="flex justify-between text-muted-foreground">
+                                                <span>Bayar ({p.method_label}{p.reference_no ? ` · ${p.reference_no}` : ''})</span>
+                                                <span className="font-mono">{formatCurrency(p.amount)}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex justify-between text-muted-foreground"><span>Bayar ({txResult.payment_method})</span><span className="font-mono">{formatCurrency(txResult.amount_paid)}</span></div>
+                                    )}
                                     {txResult.change_amount > 0 && <div className="flex justify-between font-semibold text-emerald-600"><span>Kembalian</span><span className="font-mono">{formatCurrency(txResult.change_amount)}</span></div>}
                                 </div>
                                 <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">Own Your Pace, Unleash Your Power</div>
