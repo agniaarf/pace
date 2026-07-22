@@ -12,7 +12,7 @@ class TransactionController extends Controller
 {
     public function index(Request $request): Response
     {
-        $transactions = Transaction::with(['cashier', 'customer', 'items.variant.product', 'paymentMethod'])
+        $transactions = Transaction::with(['cashier', 'customer', 'items.variant.product', 'paymentMethod', 'payments.paymentMethod'])
             ->latest('created_at')
             ->limit(100)
             ->get()
@@ -26,6 +26,11 @@ class TransactionController extends Controller
                 'cashier_name' => $t->cashier?->username ?? '—',
                 'payment_method_code' => $t->paymentMethod?->code ?? 'cash',
                 'payment_method_label' => $t->paymentMethod?->label ?? 'Tunai',
+                'payments' => $t->payments->map(fn ($p) => [
+                    'method_label' => $p->paymentMethod?->label ?? 'Tunai',
+                    'amount' => (float) $p->amount,
+                    'reference_no' => $p->reference_no,
+                ]),
                 'item_count' => $t->items->count(),
                 'items' => $t->items->map(fn ($item) => [
                     'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
@@ -47,7 +52,7 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction): Response
     {
-        $transaction->load(['cashier', 'customer', 'items.variant.product', 'paymentMethod']);
+        $transaction->load(['cashier', 'customer', 'items.variant.product', 'paymentMethod', 'payments.paymentMethod']);
 
         $data = $transaction->toArray();
         $data['items'] = $transaction->items->map(fn ($item) => [
@@ -61,6 +66,11 @@ class TransactionController extends Controller
                 'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
                 'sku' => $item->variant->sku,
             ],
+        ]);
+        $data['payments'] = $transaction->payments->map(fn ($p) => [
+            'method_label' => $p->paymentMethod?->label ?? 'Tunai',
+            'amount' => (float) $p->amount,
+            'reference_no' => $p->reference_no,
         ]);
 
         return Inertia::render('Admin/Transactions/Show', [

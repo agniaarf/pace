@@ -57,6 +57,11 @@ class Transaction extends Model
         return $this->hasMany(TransactionItem::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(TransactionPayment::class);
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

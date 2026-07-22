@@ -11,6 +11,7 @@ use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
+use App\Models\TransactionPayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,7 +71,7 @@ class CashierController extends Controller
     {
         $cashierId = $request->user()->id;
 
-        $transactions = Transaction::with(['customer', 'items.variant.product', 'paymentMethod'])
+        $transactions = Transaction::with(['customer', 'items.variant.product', 'paymentMethod', 'payments.paymentMethod'])
             ->where('cashier_id', $cashierId)
             ->latest('created_at')
             ->limit(50)
@@ -84,6 +85,11 @@ class CashierController extends Controller
                 'customer_name' => $t->customer?->full_name ?? 'Guest',
                 'payment_method_code' => $t->paymentMethod?->code ?? 'cash',
                 'payment_method_label' => $t->paymentMethod?->label ?? 'Tunai',
+                'payments' => $t->payments->map(fn ($p) => [
+                    'method_label' => $p->paymentMethod?->label ?? 'Tunai',
+                    'amount' => (float) $p->amount,
+                    'reference_no' => $p->reference_no,
+                ]),
                 'item_count' => $t->items->count(),
                 'items' => $t->items->map(fn ($item) => [
                     'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
@@ -128,12 +134,14 @@ class CashierController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => ['nullable', 'exists:customers,id'],
-            'payment_method_id' => ['nullable', 'exists:app_master,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.variant_id' => ['required', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'amount_paid' => ['required', 'numeric', 'min:0'],
+            'payments' => ['required', 'array', 'min:1'],
+            'payments.*.payment_method_id' => ['required', 'exists:app_master,id'],
+            'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'payments.*.reference_no' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -192,7 +200,14 @@ class CashierController extends Controller
             $afterDiscount = $subtotal - $discountAmount;
             $taxAmount = round($afterDiscount * 0.11);
             $totalAmount = $afterDiscount + $taxAmount;
-            $changeAmount = $validated['amount_paid'] - $totalAmount;
+
+            $totalPaid = collect($validated['payments'])->sum('amount');
+
+            if ($totalPaid < $totalAmount) {
+                return back()->with('error', 'Total pembayaran belum mencukupi total transaksi.');
+            }
+
+            $changeAmount = $totalPaid - $totalAmount;
 
             $txNumber = 'TRX-' . now()->format('ymd') . '-' . str_pad(
                 Transaction::whereDate('created_at', today())->count() + 1, 3, '0', STR_PAD_LEFT
@@ -202,7 +217,7 @@ class CashierController extends Controller
                 'transaction_number' => $txNumber,
                 'cashier_id' => $request->user()->id,
                 'customer_id' => $validated['customer_id'],
-                'payment_method_id' => $validated['payment_method_id'],
+                'payment_method_id' => $validated['payments'][0]['payment_method_id'],
                 'transaction_date' => now(),
                 'status' => 'completed',
                 'notes' => $validated['notes'] ?? null,
@@ -210,9 +225,18 @@ class CashierController extends Controller
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
-                'amount_paid' => $validated['amount_paid'],
+                'amount_paid' => $totalPaid,
                 'change_amount' => max(0, $changeAmount),
             ]);
+
+            foreach ($validated['payments'] as $payment) {
+                TransactionPayment::create([
+                    'transaction_id' => $transaction->id,
+                    'payment_method_id' => $payment['payment_method_id'],
+                    'amount' => $payment['amount'],
+                    'reference_no' => $payment['reference_no'] ?? null,
+                ]);
+            }
 
             foreach ($itemsData as $item) {
                 $item['transaction_id'] = $transaction->id;
@@ -241,9 +265,9 @@ class CashierController extends Controller
                 $customer->increment('total_spent', $totalAmount);
             }
 
-            $transaction->load('items.variant.product');
+            $transaction->load(['items.variant.product', 'payments.paymentMethod']);
 
-            $paymentMethodLabel = AppMaster::where('id', $validated['payment_method_id'])->value('label') ?? 'Tunai';
+            $paymentMethodLabel = $transaction->payments->first()?->paymentMethod?->label ?? 'Tunai';
             $customerName = $validated['customer_id'] ? Customer::where('id', $validated['customer_id'])->value('full_name') : null;
 
             return back()->with('success', "Transaksi {$txNumber} berhasil diselesaikan.")->with('transaction', [
@@ -255,6 +279,11 @@ class CashierController extends Controller
                 'amount_paid' => (float) $transaction->amount_paid,
                 'change_amount' => (float) $transaction->change_amount,
                 'payment_method' => $paymentMethodLabel,
+                'payments' => $transaction->payments->map(fn ($p) => [
+                    'method_label' => $p->paymentMethod?->label ?? 'Tunai',
+                    'amount' => (float) $p->amount,
+                    'reference_no' => $p->reference_no,
+                ]),
                 'customer_name' => $customerName,
                 'items' => $transaction->items->map(fn ($item) => [
                     'name' => $item->variant->product->name . ($item->variant->label() !== 'Default' ? ' (' . $item->variant->label() . ')' : ''),
