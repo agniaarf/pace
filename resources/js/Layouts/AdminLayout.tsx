@@ -1,5 +1,5 @@
 import AppLayout, { type NavItem } from '@/Components/Layout/AppLayout';
-import { BarChart3, Boxes, Clock, FolderTree, LayoutDashboard, Percent, Receipt, TrendingDown, Users, Package, History } from 'lucide-react';
+import { BarChart3, Boxes, Clock, FolderTree, LayoutDashboard, Percent, Receipt, RotateCcw, TrendingDown, Users, Package, History } from 'lucide-react';
 
 const adminNavItems: NavItem[] = [
     { label: 'Dasbor', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Pelanggan', href: '/admin/customers', icon: Users, permission: 'customers.read' },
     { label: 'Transaksi', href: '/admin/transactions', icon: Receipt },
     { label: 'Shift Kasir', href: '/admin/shifts', icon: Clock, permission: 'shifts.view' },
+    { label: 'Retur', href: '/admin/returns', icon: RotateCcw, permission: 'returns.approve' },
     { label: 'Diskon', href: '/admin/discounts', icon: Percent, permission: 'discounts.read' },
     { label: 'Laporan', href: '/admin/reports', icon: BarChart3, permission: 'reports.view' },
 ];

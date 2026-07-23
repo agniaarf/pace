@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ReturnController as AdminReturnController;
 use App\Http\Controllers\Admin\ShiftController as AdminShiftController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\StockMovementController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Kasir\CashierController;
+use App\Http\Controllers\Kasir\ReturnController as KasirReturnController;
 use App\Http\Controllers\Kasir\ShiftController as KasirShiftController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -84,6 +86,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 
     // Shifts
     Route::get('/shifts', [AdminShiftController::class, 'index'])->name('admin.shifts.index');
+
+    // Returns
+    Route::get('/returns', [AdminReturnController::class, 'index'])->name('admin.returns.index');
+    Route::middleware('permission:returns.approve')->group(function () {
+        Route::post('/returns/{return}/approve', [AdminReturnController::class, 'approve'])->name('admin.returns.approve');
+        Route::post('/returns/{return}/reject', [AdminReturnController::class, 'reject'])->name('admin.returns.reject');
+    });
 });
 
 // Kasir routes
@@ -97,4 +106,8 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->group(function () {
     // Shift
     Route::post('/shift/open', [KasirShiftController::class, 'open'])->name('kasir.shift.open');
     Route::post('/shift/close', [KasirShiftController::class, 'close'])->name('kasir.shift.close');
+
+    // Returns
+    Route::get('/returns', [KasirReturnController::class, 'index'])->name('kasir.returns.index');
+    Route::post('/returns', [KasirReturnController::class, 'store'])->name('kasir.returns.store');
 });

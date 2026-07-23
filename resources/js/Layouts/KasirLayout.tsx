@@ -13,7 +13,7 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { useToast } from '@/Components/ui/toast';
 import { useForm, usePage } from '@inertiajs/react';
-import { History, LayoutDashboard, Lock, ShoppingCart, Unlock, Users } from 'lucide-react';
+import { History, LayoutDashboard, Lock, RotateCcw, ShoppingCart, Unlock, Users } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency } from '@/lib/utils';
@@ -22,6 +22,7 @@ const kasirNavItems: NavItem[] = [
     { label: 'Dasbor', href: '/kasir/dashboard', icon: LayoutDashboard },
     { label: 'Kasir', href: '/kasir/cashier', icon: ShoppingCart, permission: 'transactions.create' },
     { label: 'Riwayat Transaksi', href: '/kasir/transactions', icon: History },
+    { label: 'Retur', href: '/kasir/returns', icon: RotateCcw, permission: 'returns.create' },
     { label: 'Pelanggan', href: '/kasir/customers', icon: Users, permission: 'customers.read' },
 ];
 
