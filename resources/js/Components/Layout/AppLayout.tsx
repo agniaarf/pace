@@ -25,9 +25,10 @@ interface AppLayoutProps {
     activeRoute: string;
     title: string;
     subtitle?: string;
+    headerExtra?: React.ReactNode;
 }
 
-export default function AppLayout({ children, navItems, activeRoute, title, subtitle }: AppLayoutProps) {
+export default function AppLayout({ children, navItems, activeRoute, title, subtitle, headerExtra }: AppLayoutProps) {
     const { auth } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
@@ -164,6 +165,7 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {headerExtra}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground transition hover:bg-accent">

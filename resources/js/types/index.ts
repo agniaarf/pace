@@ -37,11 +37,25 @@ export interface TransactionReceipt {
     created_at: string;
 }
 
+export interface ShiftSummary {
+    opening_balance: number;
+    closing_balance_expected: number;
+    closing_balance_actual: number;
+    variance: number;
+}
+
 export interface FlashMessages {
     success?: string | null;
     error?: string | null;
     message?: string | null;
     transaction?: TransactionReceipt | null;
+    shiftSummary?: ShiftSummary | null;
+}
+
+export interface ActiveShift {
+    id: number;
+    opening_balance: number;
+    opened_at: string;
 }
 
 export interface SharedProps {
@@ -50,6 +64,8 @@ export interface SharedProps {
         user: AuthUser | null;
     };
     flash: FlashMessages;
+    requireShift: boolean;
+    activeShift: ActiveShift | null;
 }
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> =

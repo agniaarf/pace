@@ -19,6 +19,7 @@ class RolePermissionSeeder extends Seeder
             'stock' => ['read', 'update'],
             'customers' => ['read', 'create', 'update', 'delete'],
             'transactions' => ['read', 'create', 'update', 'delete', 'process'],
+            'shifts' => ['view', 'create', 'update'],
             'discounts' => ['read', 'create', 'update', 'delete'],
             'users' => ['read', 'create', 'update', 'delete'],
             'reports' => ['view', 'export'],
@@ -60,6 +61,9 @@ class RolePermissionSeeder extends Seeder
             'customers.read',
             'customers.create',
             'reports.view',
+            'shifts.view',
+            'shifts.create',
+            'shifts.update',
         ];
         $kasir = Role::updateOrCreate(
             ['slug' => 'kasir'],

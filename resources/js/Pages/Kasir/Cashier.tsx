@@ -104,7 +104,8 @@ const STEPS: { label: string }[] = [
 ];
 
 export default function Cashier() {
-    const { products, customers, paymentMethods, activeDiscounts, flash } = usePage<PageProps & CashierPageProps>().props;
+    const { products, customers, paymentMethods, activeDiscounts, flash, activeShift, requireShift } = usePage<PageProps & CashierPageProps>().props;
+    const shiftBlocked = requireShift && !activeShift;
     const { toast } = useToast();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
@@ -330,6 +331,12 @@ export default function Cashier() {
                     </div>
                 )}
 
+                {shiftBlocked && (
+                    <div className="animate-fade-in mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                        Anda harus membuka shift terlebih dahulu sebelum membuat transaksi. Gunakan tombol "Buka Shift" di pojok kanan atas.
+                    </div>
+                )}
+
                 {/* Breadcrumb */}
                 <div className="mb-4">
                     <ProgressStepper steps={STEPS} currentStep={currentStepIndex} />
@@ -518,7 +525,7 @@ export default function Cashier() {
                                 variant="gradient"
                                 className="w-full justify-center"
                                 size="lg"
-                                disabled={cart.length === 0}
+                                disabled={cart.length === 0 || shiftBlocked}
                                 onClick={() => setStep('konfirmasi')}
                             >
                                 Lanjut ke Pembayaran

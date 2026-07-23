@@ -11,6 +11,7 @@ class Transaction extends Model
     protected $fillable = [
         'transaction_number',
         'cashier_id',
+        'shift_id',
         'customer_id',
         'payment_method_id',
         'transaction_date',
@@ -40,6 +41,11 @@ class Transaction extends Model
     public function cashier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function customer(): BelongsTo

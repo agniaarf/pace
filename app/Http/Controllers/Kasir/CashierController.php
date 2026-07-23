@@ -7,6 +7,7 @@ use App\Models\AppMaster;
 use App\Models\Customer;
 use App\Models\Discount;
 use App\Models\ProductVariant;
+use App\Models\Shift;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Transaction;
@@ -145,7 +146,13 @@ class CashierController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
+        $activeShift = Shift::where('cashier_id', $request->user()->id)->where('status', 'open')->first();
+
+        if (config('pace.require_shift') && !$activeShift) {
+            return back()->with('error', 'Anda harus membuka shift terlebih dahulu sebelum membuat transaksi.');
+        }
+
+        return DB::transaction(function () use ($validated, $request, $activeShift) {
             $subtotal = 0;
             $itemsData = [];
 
@@ -216,6 +223,7 @@ class CashierController extends Controller
             $transaction = Transaction::create([
                 'transaction_number' => $txNumber,
                 'cashier_id' => $request->user()->id,
+                'shift_id' => $activeShift?->id,
                 'customer_id' => $validated['customer_id'],
                 'payment_method_id' => $validated['payments'][0]['payment_method_id'],
                 'transaction_date' => now(),

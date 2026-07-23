@@ -6,12 +6,14 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ShiftController as AdminShiftController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Kasir\CashierController;
+use App\Http\Controllers\Kasir\ShiftController as KasirShiftController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -79,6 +81,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
+
+    // Shifts
+    Route::get('/shifts', [AdminShiftController::class, 'index'])->name('admin.shifts.index');
 });
 
 // Kasir routes
@@ -88,4 +93,8 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->group(function () {
     Route::get('/transactions', [CashierController::class, 'history'])->name('kasir.transactions');
     Route::get('/customers', [CashierController::class, 'customers'])->name('kasir.customers');
     Route::post('/cashier', [CashierController::class, 'store'])->name('kasir.cashier.store');
+
+    // Shift
+    Route::post('/shift/open', [KasirShiftController::class, 'open'])->name('kasir.shift.open');
+    Route::post('/shift/close', [KasirShiftController::class, 'close'])->name('kasir.shift.close');
 });

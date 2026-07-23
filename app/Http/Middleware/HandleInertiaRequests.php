@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Shift;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -50,7 +51,22 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'message' => fn () => $request->session()->get('message'),
                 'transaction' => fn () => $request->session()->get('transaction'),
+                'shiftSummary' => fn () => $request->session()->get('shiftSummary'),
             ],
+            'requireShift' => (bool) config('pace.require_shift'),
+            'activeShift' => function () use ($user) {
+                if (!$user || !$user->isKasir()) {
+                    return null;
+                }
+
+                $shift = Shift::where('cashier_id', $user->id)->where('status', 'open')->first();
+
+                return $shift ? [
+                    'id' => $shift->id,
+                    'opening_balance' => (float) $shift->opening_balance,
+                    'opened_at' => $shift->opened_at->toDateTimeString(),
+                ] : null;
+            },
         ];
     }
 }
