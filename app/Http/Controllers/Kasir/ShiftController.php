@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Kasir;
 
 use App\Http\Controllers\Controller;
 use App\Models\Shift;
+use App\Models\Transaction;
 use App\Models\TransactionPayment;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -49,11 +50,15 @@ class ShiftController extends Controller
             return back()->with('error', 'Tidak ada shift aktif untuk ditutup.');
         }
 
-        $cashSales = TransactionPayment::whereHas('transaction', fn ($q) => $q->where('shift_id', $shift->id))
+        // Cash tendered minus change given back — change is always paid out of the
+        // physical drawer regardless of which payment line the overpayment came from.
+        $cashTendered = TransactionPayment::whereHas('transaction', fn ($q) => $q->where('shift_id', $shift->id))
             ->whereHas('paymentMethod', fn ($q) => $q->where('code', 'cash'))
             ->sum('amount');
 
-        $expected = (float) $shift->opening_balance + (float) $cashSales;
+        $changeGiven = Transaction::where('shift_id', $shift->id)->sum('change_amount');
+
+        $expected = (float) $shift->opening_balance + (float) $cashTendered - (float) $changeGiven;
         $variance = $validated['closing_balance_actual'] - $expected;
 
         $shift->update([
