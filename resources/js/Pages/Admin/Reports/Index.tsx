@@ -1,8 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
+import { DatePicker } from '@/Components/ui/calendar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { BarChart3, Download, DollarSign, Receipt, ShoppingBag, TrendingUp } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { BarChart3, Clock, Download, DollarSign, Receipt, ShoppingBag, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
 import {
     Area,
     AreaChart,
@@ -29,6 +33,22 @@ interface TopProduct {
     total_revenue: number;
 }
 
+interface PeakHour {
+    hour: number;
+    count: number;
+    revenue: number;
+}
+
+interface ShiftPerformance {
+    id: number;
+    cashier_name: string;
+    opened_at: string;
+    closed_at: string | null;
+    transaction_count: number;
+    total_revenue: number;
+    variance: number;
+}
+
 interface ReportsPageProps {
     stats: {
         totalRevenue: number;
@@ -37,11 +57,17 @@ interface ReportsPageProps {
     };
     dailyRevenue: DailyRevenue[];
     topProducts: TopProduct[];
+    peakHours: PeakHour[];
+    shiftPerformance: ShiftPerformance[];
     days: number;
+    from: string;
+    to: string;
 }
 
 export default function ReportsIndex() {
-    const { stats, dailyRevenue, topProducts, days } = usePage<PageProps & ReportsPageProps>().props;
+    const { stats, dailyRevenue, topProducts, peakHours, shiftPerformance, days, from, to } = usePage<PageProps & ReportsPageProps>().props;
+    const [fromInput, setFromInput] = useState(from);
+    const [toInput, setToInput] = useState(to);
 
     const chartData = dailyRevenue.map((d) => ({
         date: new Date(d.date).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }),
@@ -55,6 +81,12 @@ export default function ReportsIndex() {
         revenue: p.total_revenue,
     }));
 
+    const peakHourData = peakHours.map((h) => ({
+        hour: `${h.hour.toString().padStart(2, '0')}:00`,
+        count: h.count,
+    }));
+    const busiestHour = peakHours.reduce((best, h) => (h.count > best.count ? h : best), peakHours[0]);
+
     const cards = [
         { label: 'Total Pendapatan', value: formatCurrency(stats.totalRevenue), icon: DollarSign, gradient: 'from-green-500 to-emerald-500' },
         { label: 'Total Transaksi', value: stats.totalTransactions.toString(), icon: Receipt, gradient: 'from-orange-500 to-red-500' },
@@ -62,19 +94,37 @@ export default function ReportsIndex() {
         { label: 'Produk Terjual', value: topProducts.reduce((sum, p) => sum + p.total_sold, 0).toString(), icon: ShoppingBag, gradient: 'from-violet-500 to-purple-500' },
     ];
 
+    const applyCustomRange = () => {
+        if (!fromInput || !toInput) return;
+        router.get('/admin/reports', { from: fromInput, to: toInput }, { preserveState: true });
+    };
+
     return (
         <>
             <Head title="Laporan" />
             <AdminLayout title="Laporan" subtitle="Analisis bisnis dan wawasan" activeRoute="/admin/reports">
                 <div className="space-y-6">
                     {/* Period selector + export */}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-wrap gap-2">
-                            <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">7 Hari Terakhir</Button></Link>
-                            <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">30 Hari Terakhir</Button></Link>
-                            <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">90 Hari Terakhir</Button></Link>
+                    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="flex flex-wrap items-end gap-3">
+                            <div className="flex flex-wrap gap-2">
+                                <Link href="/admin/reports?days=7"><Button variant={days === 7 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">7 Hari Terakhir</Button></Link>
+                                <Link href="/admin/reports?days=30"><Button variant={days === 30 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">30 Hari Terakhir</Button></Link>
+                                <Link href="/admin/reports?days=90"><Button variant={days === 90 ? 'default' : 'outline'} size="sm" className="w-full sm:w-auto">90 Hari Terakhir</Button></Link>
+                            </div>
+                            <div className="flex flex-wrap items-end gap-2 border-l border-border pl-3">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Dari</p>
+                                    <DatePicker value={fromInput} onChange={setFromInput} placeholder="Tanggal mulai" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-muted-foreground">Sampai</p>
+                                    <DatePicker value={toInput} onChange={setToInput} placeholder="Tanggal akhir" />
+                                </div>
+                                <Button variant="secondary" size="sm" onClick={applyCustomRange}>Terapkan</Button>
+                            </div>
                         </div>
-                        <a href={`/admin/reports/export?days=${days}`} className="block">
+                        <a href={`/admin/reports/export?from=${from}&to=${to}`} className="block">
                             <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                 <Download className="h-4 w-4" />Ekspor CSV
                             </Button>
@@ -135,30 +185,109 @@ export default function ReportsIndex() {
                         </CardContent>
                     </Card>
 
-                    {/* Top products */}
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        {/* Top products */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <ShoppingBag className="h-5 w-5 text-primary" />
+                                    Produk Terlaris
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {productData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={productData} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(28,10,0,0.06)" />
+                                            <XAxis type="number" tick={{ fontSize: 12, fill: '#9a6540' }} />
+                                            <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#9a6540' }} width={120} />
+                                            <Tooltip
+                                                formatter={(v) => [`${v} unit`, 'Terjual']}
+                                                contentStyle={{ borderRadius: '12px', border: '1px solid rgba(28,10,0,0.09)', background: '#ffffff' }}
+                                            />
+                                            <Bar dataKey="sold" fill="#ea580c" radius={[0, 8, 8, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada data penjualan produk untuk periode ini.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Peak hours */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Clock className="h-5 w-5 text-primary" />
+                                    Jam Sibuk
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {busiestHour && busiestHour.count > 0 && (
+                                    <p className="mb-3 text-xs text-muted-foreground">
+                                        Jam tersibuk: <span className="font-semibold text-foreground">{busiestHour.hour.toString().padStart(2, '0')}:00</span> ({busiestHour.count} transaksi)
+                                    </p>
+                                )}
+                                {peakHourData.some((h) => h.count > 0) ? (
+                                    <ResponsiveContainer width="100%" height={280}>
+                                        <BarChart data={peakHourData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(28,10,0,0.06)" />
+                                            <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#9a6540' }} interval={2} />
+                                            <YAxis tick={{ fontSize: 12, fill: '#9a6540' }} allowDecimals={false} />
+                                            <Tooltip
+                                                formatter={(v) => [`${v} transaksi`, 'Jumlah']}
+                                                contentStyle={{ borderRadius: '12px', border: '1px solid rgba(28,10,0,0.09)', background: '#ffffff' }}
+                                            />
+                                            <Bar dataKey="count" fill="#9a6540" radius={[6, 6, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada data transaksi untuk periode ini.</p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Shift performance */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <ShoppingBag className="h-5 w-5 text-primary" />
-                                Produk Terlaris
+                                <Users className="h-5 w-5 text-primary" />
+                                Performa Shift per Kasir
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {productData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <BarChart data={productData} layout="vertical">
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(28,10,0,0.06)" />
-                                        <XAxis type="number" tick={{ fontSize: 12, fill: '#9a6540' }} />
-                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#9a6540' }} width={120} />
-                                        <Tooltip
-                                            formatter={(v) => [`${v} unit`, 'Terjual']}
-                                            contentStyle={{ borderRadius: '12px', border: '1px solid rgba(28,10,0,0.09)', background: '#ffffff' }}
-                                        />
-                                        <Bar dataKey="sold" fill="#ea580c" radius={[0, 8, 8, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            {shiftPerformance.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Kasir</TableHead>
+                                            <TableHead>Dibuka</TableHead>
+                                            <TableHead>Ditutup</TableHead>
+                                            <TableHead>Transaksi</TableHead>
+                                            <TableHead>Pendapatan</TableHead>
+                                            <TableHead>Selisih Kas</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {shiftPerformance.map((s) => (
+                                            <TableRow key={s.id}>
+                                                <TableCell className="font-medium">{s.cashier_name}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">{new Date(s.opened_at).toLocaleString('id-ID')}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">{s.closed_at ? new Date(s.closed_at).toLocaleString('id-ID') : '—'}</TableCell>
+                                                <TableCell>{s.transaction_count}</TableCell>
+                                                <TableCell className="font-semibold">{formatCurrency(s.total_revenue)}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={s.variance === 0 ? 'success' : s.variance > 0 ? 'default' : 'destructive'}>
+                                                        {s.variance > 0 ? '+' : ''}{formatCurrency(s.variance)}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             ) : (
-                                <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada data penjualan produk untuk periode ini.</p>
+                                <p className="py-12 text-center text-sm text-muted-foreground">Tidak ada shift yang ditutup pada periode ini.</p>
                             )}
                         </CardContent>
                     </Card>
