@@ -37,7 +37,12 @@ interface Customer {
     total_purchases: number;
     total_spent: string;
     join_date: string | null;
+    points_balance: number;
+    tier: 'bronze' | 'silver' | 'gold';
 }
+
+const TIER_LABELS: Record<Customer['tier'], string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
+const TIER_BADGE: Record<Customer['tier'], 'outline' | 'secondary' | 'warning'> = { bronze: 'outline', silver: 'secondary', gold: 'warning' };
 
 interface CustomersPageProps {
     customers: Customer[];
@@ -125,6 +130,16 @@ export default function CustomersIndex() {
             key: 'total_spent',
             header: 'Total Belanja',
             render: (c) => <span className="font-semibold">{formatCurrency(Number(c.total_spent))}</span>,
+        },
+        {
+            key: 'points_balance',
+            header: 'Poin / Tier',
+            render: (c) => (
+                <div className="flex items-center gap-1.5">
+                    <span className="font-mono text-sm font-semibold">{c.points_balance}</span>
+                    <Badge variant={TIER_BADGE[c.tier]}>{TIER_LABELS[c.tier]}</Badge>
+                </div>
+            ),
         },
         {
             key: 'status',

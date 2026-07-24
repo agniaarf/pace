@@ -58,7 +58,18 @@ interface CashierCustomer {
     full_name: string;
     phone: string | null;
     email: string | null;
+    points_balance: number;
+    tier: 'bronze' | 'silver' | 'gold';
 }
+
+interface LoyaltySettings {
+    earn_rate: number;
+    redeem_value: number;
+    silver_threshold: number;
+    gold_threshold: number;
+}
+
+const TIER_LABELS: Record<CashierCustomer['tier'], string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
 
 interface PaymentMethod {
     id: number;
@@ -84,6 +95,7 @@ interface CashierPageProps {
     customers: CashierCustomer[];
     paymentMethods: PaymentMethod[];
     activeDiscounts: ActiveDiscount[];
+    loyaltySettings: LoyaltySettings;
 }
 
 interface CartItem {
@@ -109,7 +121,7 @@ const STEPS: { label: string }[] = [
 ];
 
 export default function Cashier() {
-    const { products, customers, paymentMethods, activeDiscounts, flash, activeShift, requireShift } = usePage<PageProps & CashierPageProps>().props;
+    const { products, customers, paymentMethods, activeDiscounts, loyaltySettings, flash, activeShift, requireShift } = usePage<PageProps & CashierPageProps>().props;
     const shiftBlocked = requireShift && !activeShift;
     const { toast } = useToast();
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -121,6 +133,7 @@ export default function Cashier() {
     const [customerSearch, setCustomerSearch] = useState('');
     const [step, setStep] = useState<CheckoutStep>('produk');
     const [payments, setPayments] = useState<{ payment_method_id: number; amount: number; reference_no: string }[]>([]);
+    const [redeemPointsInput, setRedeemPointsInput] = useState('');
     const [newMethodId, setNewMethodId] = useState<number | null>(null);
     const [newAmountInput, setNewAmountInput] = useState('');
     const [newReference, setNewReference] = useState('');
@@ -133,10 +146,12 @@ export default function Cashier() {
         items: { variant_id: number; quantity: number; unit_price: number }[];
         customer_id: number | null;
         payments: { payment_method_id: number; amount: number; reference_no: string | null }[];
+        redeem_points: number;
     }>({
         items: [],
         customer_id: null,
         payments: [],
+        redeem_points: 0,
     });
 
     const filteredProducts = useMemo(() =>
@@ -261,7 +276,17 @@ export default function Cashier() {
         });
     }, [cart, activeDiscounts]);
 
-    const totalDiscount = appliedDiscounts.reduce((s, d) => s + d.amount, 0);
+    const itemDiscount = appliedDiscounts.reduce((s, d) => s + d.amount, 0);
+    const remainingAfterItemDiscount = Math.max(0, subtotal - itemDiscount);
+    const maxRedeemablePoints = selectedCustomer
+        ? Math.min(selectedCustomer.points_balance, Math.floor(remainingAfterItemDiscount / loyaltySettings.redeem_value))
+        : 0;
+    const redeemPoints = Math.min(parseInt(redeemPointsInput.replace(/\D/g, '')) || 0, maxRedeemablePoints);
+    const redeemValue = redeemPoints * loyaltySettings.redeem_value;
+    const discountsWithRedeem = redeemValue > 0
+        ? [...appliedDiscounts, { name: `Penukaran ${redeemPoints} Poin`, amount: redeemValue }]
+        : appliedDiscounts;
+    const totalDiscount = itemDiscount + redeemValue;
     const afterDiscount = subtotal - totalDiscount;
     const taxAmount = Math.round(afterDiscount * 0.11);
     const totalAmount = afterDiscount + taxAmount;
@@ -349,6 +374,7 @@ export default function Cashier() {
                 amount: p.amount,
                 reference_no: p.reference_no || null,
             })),
+            redeem_points: redeemPoints,
         });
         post('/kasir/cashier', {
             preserveScroll: true,
@@ -362,7 +388,10 @@ export default function Cashier() {
                         transaction_number: 'TRX-',
                         subtotal,
                         discount_amount: totalDiscount,
-                        discounts: appliedDiscounts,
+                        discounts: discountsWithRedeem,
+                        points_earned: 0,
+                        points_balance: selectedCustomer ? selectedCustomer.points_balance - redeemPoints : null,
+                        tier: selectedCustomer?.tier ?? null,
                         tax_amount: taxAmount,
                         total_amount: totalAmount,
                         amount_paid: totalPaidSoFar,
@@ -416,6 +445,7 @@ export default function Cashier() {
         setNewMethodId(null);
         setNewAmountInput('');
         setNewReference('');
+        setRedeemPointsInput('');
         setTxResult(null);
         reset();
     };
@@ -547,6 +577,7 @@ export default function Cashier() {
                                         <div className="truncate text-xs font-semibold text-foreground">{selectedCustomer.full_name}</div>
                                         <div className="font-mono text-xs text-primary">{selectedCustomer.member_code ?? selectedCustomer.phone}</div>
                                     </div>
+                                    <Badge variant="outline" className="flex-shrink-0 text-[10px]">{selectedCustomer.points_balance} poin · {TIER_LABELS[selectedCustomer.tier]}</Badge>
                                     <button onClick={() => setSelectedCustomer(null)} className="flex-shrink-0 text-muted-foreground hover:text-foreground">
                                         <X className="h-3 w-3" />
                                     </button>
@@ -607,7 +638,7 @@ export default function Cashier() {
                                     <span>Subtotal</span>
                                     <span className="font-mono">{formatCurrency(subtotal)}</span>
                                 </div>
-                                {appliedDiscounts.map(d => (
+                                {discountsWithRedeem.map(d => (
                                     <div key={d.name} className="flex justify-between text-xs font-medium text-emerald-600">
                                         <span className="flex items-center gap-1"><Tag className="h-2.5 w-2.5" />{d.name}</span>
                                         <span className="font-mono">−{formatCurrency(d.amount)}</span>
@@ -622,10 +653,10 @@ export default function Cashier() {
                                     <span className="font-mono text-primary">{formatCurrency(totalAmount)}</span>
                                 </div>
                             </div>
-                            {appliedDiscounts.length > 0 && (
+                            {discountsWithRedeem.length > 0 && (
                                 <div className="flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700">
                                     <CheckCircle className="h-3 w-3" />
-                                    {appliedDiscounts.length} diskon aktif — hemat {formatCurrency(totalDiscount)}
+                                    {discountsWithRedeem.length} diskon aktif — hemat {formatCurrency(totalDiscount)}
                                 </div>
                             )}
                             <Button
@@ -659,7 +690,7 @@ export default function Cashier() {
                                     </div>
                                     <div className="space-y-1 border-t border-border pt-2">
                                         <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
-                                        {appliedDiscounts.map(d => (
+                                        {discountsWithRedeem.map(d => (
                                             <div key={d.name} className="flex justify-between text-xs text-emerald-600">
                                                 <span>Diskon: {d.name}</span>
                                                 <span className="font-mono">−{formatCurrency(d.amount)}</span>
@@ -669,10 +700,10 @@ export default function Cashier() {
                                     </div>
                                 </div>
                             </div>
-                            {appliedDiscounts.length > 0 && (
+                            {discountsWithRedeem.length > 0 && (
                                 <div className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
                                     <Tag className="h-4 w-4" />
-                                    Hemat {formatCurrency(totalDiscount)} dengan {appliedDiscounts.length} diskon aktif
+                                    Hemat {formatCurrency(totalDiscount)} dengan {discountsWithRedeem.length} diskon aktif
                                 </div>
                             )}
                         </div>
@@ -683,7 +714,7 @@ export default function Cashier() {
                             <div className="flex-1 space-y-3 p-4">
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
-                                    {appliedDiscounts.map(d => (
+                                    {discountsWithRedeem.map(d => (
                                         <div key={d.name} className="flex justify-between text-xs font-medium text-emerald-600"><span>{d.name}</span><span className="font-mono">−{formatCurrency(d.amount)}</span></div>
                                     ))}
                                     <div className="flex justify-between text-xs text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(taxAmount)}</span></div>
@@ -717,6 +748,35 @@ export default function Cashier() {
                                 <p className="text-sm text-white/80">Total Belanja</p>
                                 <p className="font-mono text-3xl font-bold">{formatCurrency(totalAmount)}</p>
                             </div>
+
+                            {selectedCustomer && selectedCustomer.points_balance > 0 && (
+                                <div className="mb-4 space-y-2 rounded-xl border border-dashed border-border p-4">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-semibold text-muted-foreground">
+                                            Tukar Poin — Saldo {selectedCustomer.points_balance} poin ({TIER_LABELS[selectedCustomer.tier]})
+                                        </p>
+                                        <button
+                                            type="button"
+                                            className="text-xs font-semibold text-primary hover:underline"
+                                            onClick={() => setRedeemPointsInput(String(maxRedeemablePoints))}
+                                        >
+                                            Gunakan Maks
+                                        </button>
+                                    </div>
+                                    <Input
+                                        type="text"
+                                        inputMode="numeric"
+                                        placeholder="0"
+                                        value={redeemPointsInput}
+                                        onChange={(e) => setRedeemPointsInput(e.target.value.replace(/\D/g, ''))}
+                                    />
+                                    {redeemPoints > 0 && (
+                                        <p className="text-xs font-medium text-emerald-600">
+                                            Potongan {formatCurrency(redeemValue)} dari {redeemPoints} poin
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             {payments.length > 0 && (
                                 <div className="mb-4 space-y-2">
@@ -878,6 +938,12 @@ export default function Cashier() {
                                     )}
                                     {txResult.change_amount > 0 && <div className="flex justify-between font-semibold text-emerald-600"><span>Kembalian</span><span className="font-mono">{formatCurrency(txResult.change_amount)}</span></div>}
                                 </div>
+                                {txResult.points_balance !== null && txResult.points_balance !== undefined && (
+                                    <div className="mt-2 border-t border-dashed border-border pt-2 text-xs text-primary">
+                                        {!!txResult.points_earned && <span>+{txResult.points_earned} poin diperoleh · </span>}
+                                        Saldo poin: {txResult.points_balance} ({TIER_LABELS[txResult.tier ?? 'bronze']})
+                                    </div>
+                                )}
                                 <div className="mt-3 border-t border-dashed border-border pt-2 text-center text-xs text-muted-foreground">Own Your Pace, Unleash Your Power</div>
                             </div>
                             <div className="flex w-full gap-2">
@@ -915,6 +981,7 @@ export default function Cashier() {
                                         <div className="text-sm font-semibold text-foreground">{c.full_name}</div>
                                         <div className="font-mono text-xs text-muted-foreground">{c.member_code ?? '—'} · {c.phone ?? '—'}</div>
                                     </div>
+                                    <Badge variant="outline" className="flex-shrink-0 text-[10px]">{c.points_balance} poin · {TIER_LABELS[c.tier]}</Badge>
                                 </button>
                             ))}
                             {customerSearch && filteredCustomers.length === 0 && (

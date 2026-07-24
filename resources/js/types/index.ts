@@ -32,6 +32,9 @@ export interface TransactionReceipt {
     subtotal: number;
     discount_amount: number;
     discounts: DiscountBreakdown[];
+    points_earned?: number;
+    points_balance?: number | null;
+    tier?: 'bronze' | 'silver' | 'gold' | null;
     tax_amount: number;
     total_amount: number;
     amount_paid: number;

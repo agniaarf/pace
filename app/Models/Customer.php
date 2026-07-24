@@ -36,4 +36,18 @@ class Customer extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function loyaltyBalances(): HasMany
+    {
+        return $this->hasMany(CustomerLoyaltyBalance::class);
+    }
+
+    /**
+     * The default (and, until Multi-Outlet ships, only) outlet's loyalty balance.
+     * Always returns a persisted row -- creates one on first access.
+     */
+    public function loyaltyBalance(int $outletId = 1): CustomerLoyaltyBalance
+    {
+        return $this->loyaltyBalances()->firstOrCreate(['outlet_id' => $outletId]);
+    }
 }

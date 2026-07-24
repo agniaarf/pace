@@ -14,7 +14,17 @@ class CustomerController extends Controller
 {
     public function index(Request $request): Response
     {
-        $customers = Customer::latest()->get();
+        $customers = Customer::with('loyaltyBalances')
+            ->latest()
+            ->get()
+            ->map(function (Customer $c) {
+                $balance = $c->loyaltyBalances->firstWhere('outlet_id', 1);
+                $data = $c->toArray();
+                $data['points_balance'] = $balance->points_balance ?? 0;
+                $data['tier'] = $balance->tier ?? 'bronze';
+
+                return $data;
+            });
 
         return Inertia::render('Admin/Customers/Index', [
             'customers' => $customers,

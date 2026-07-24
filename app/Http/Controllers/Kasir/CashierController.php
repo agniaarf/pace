@@ -43,8 +43,22 @@ class CashierController extends Controller
             ]);
 
         $customers = Customer::where('status', 'active')
+            ->with('loyaltyBalances')
             ->orderBy('full_name')
-            ->get(['id', 'member_code', 'full_name', 'phone', 'email']);
+            ->get(['id', 'member_code', 'full_name', 'phone', 'email'])
+            ->map(function (Customer $c) {
+                $balance = $c->loyaltyBalances->firstWhere('outlet_id', 1);
+
+                return [
+                    'id' => $c->id,
+                    'member_code' => $c->member_code,
+                    'full_name' => $c->full_name,
+                    'phone' => $c->phone,
+                    'email' => $c->email,
+                    'points_balance' => $balance->points_balance ?? 0,
+                    'tier' => $balance->tier ?? 'bronze',
+                ];
+            });
 
         $paymentMethods = AppMaster::where('type', 'payment_method')
             ->where('is_active', true)
@@ -58,7 +72,16 @@ class CashierController extends Controller
             'customers' => $customers,
             'paymentMethods' => $paymentMethods,
             'activeDiscounts' => $activeDiscounts,
+            'loyaltySettings' => $this->loyaltySettings(),
         ]);
+    }
+
+    private function loyaltySettings(): array
+    {
+        $defaults = ['earn_rate' => 10000, 'redeem_value' => 100, 'silver_threshold' => 500, 'gold_threshold' => 2000];
+        $value = AppMaster::where('type', 'loyalty_setting')->where('code', 'default')->value('value');
+
+        return array_merge($defaults, $value ?? []);
     }
 
     private function activeDiscounts(): \Illuminate\Support\Collection
@@ -232,6 +255,7 @@ class CashierController extends Controller
             'payments.*.payment_method_id' => ['required', 'exists:app_master,id'],
             'payments.*.amount' => ['required', 'numeric', 'min:0.01'],
             'payments.*.reference_no' => ['nullable', 'string', 'max:100'],
+            'redeem_points' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -274,10 +298,30 @@ class CashierController extends Controller
 
             $discountResult = $this->calculateDiscounts($this->activeDiscounts(), $itemsData);
             $discountAmount = $discountResult['amount'];
+            $breakdown = $discountResult['breakdown'];
 
             // item_discount/product_id/category_id were only needed for the discount
             // calculation above; TransactionItem::create() below ignores unknown keys
             // via mass-assignment guarding, so no further stripping is needed.
+
+            $loyaltySettings = $this->loyaltySettings();
+            $loyaltyBalance = null;
+            $pointsRedeemed = 0;
+
+            if ($validated['customer_id'] && ($validated['redeem_points'] ?? 0) > 0) {
+                $customer = Customer::findOrFail($validated['customer_id']);
+                $loyaltyBalance = $customer->loyaltyBalance();
+
+                $remainingAfterItemDiscount = max(0, $subtotal - $discountAmount);
+                $maxRedeemableByValue = intdiv($remainingAfterItemDiscount, $loyaltySettings['redeem_value']);
+                $pointsRedeemed = min($validated['redeem_points'], $loyaltyBalance->points_balance, $maxRedeemableByValue);
+
+                if ($pointsRedeemed > 0) {
+                    $redemptionValue = $pointsRedeemed * $loyaltySettings['redeem_value'];
+                    $discountAmount += $redemptionValue;
+                    $breakdown[] = ['name' => "Penukaran {$pointsRedeemed} Poin", 'amount' => $redemptionValue];
+                }
+            }
 
             $afterDiscount = $subtotal - $discountAmount;
             $taxAmount = round($afterDiscount * 0.11);
@@ -342,10 +386,25 @@ class CashierController extends Controller
                 ]);
             }
 
+            $pointsEarned = 0;
+            $newPointsBalance = null;
+            $newTier = null;
+
             if ($validated['customer_id']) {
                 $customer = Customer::find($validated['customer_id']);
                 $customer->increment('total_purchases');
                 $customer->increment('total_spent', $totalAmount);
+
+                $loyaltyBalance ??= $customer->loyaltyBalance();
+                $pointsEarned = intdiv((int) $totalAmount, $loyaltySettings['earn_rate']);
+
+                $loyaltyBalance->points_balance = $loyaltyBalance->points_balance - $pointsRedeemed + $pointsEarned;
+                $loyaltyBalance->lifetime_points += $pointsEarned;
+                $loyaltyBalance->recalculateTier($loyaltySettings);
+                $loyaltyBalance->save();
+
+                $newPointsBalance = $loyaltyBalance->points_balance;
+                $newTier = $loyaltyBalance->tier;
             }
 
             $transaction->load(['items.variant.product', 'payments.paymentMethod']);
@@ -357,7 +416,10 @@ class CashierController extends Controller
                 'transaction_number' => $transaction->transaction_number,
                 'subtotal' => (float) $transaction->subtotal,
                 'discount_amount' => (float) $transaction->discount_amount,
-                'discounts' => $discountResult['breakdown'],
+                'discounts' => $breakdown,
+                'points_earned' => $pointsEarned,
+                'points_balance' => $newPointsBalance,
+                'tier' => $newTier,
                 'tax_amount' => (float) $transaction->tax_amount,
                 'total_amount' => (float) $transaction->total_amount,
                 'amount_paid' => (float) $transaction->amount_paid,

@@ -46,6 +46,21 @@ class MasterDataSeeder extends Seeder
             );
         }
 
+        // Loyalty program settings (points earn rate, redemption value, tier thresholds)
+        AppMaster::updateOrCreate(
+            ['type' => 'loyalty_setting', 'code' => 'default'],
+            [
+                'label' => 'Pengaturan Loyalitas',
+                'value' => [
+                    'earn_rate' => 10000,       // Rp spent per 1 point earned
+                    'redeem_value' => 100,      // Rp value of 1 point when redeemed
+                    'silver_threshold' => 500,  // lifetime points to reach Silver
+                    'gold_threshold' => 2000,   // lifetime points to reach Gold
+                ],
+                'is_active' => true,
+            ]
+        );
+
         // Generic active/inactive statuses (reusable for product/user)
         foreach (['active' => 'Active', 'inactive' => 'Inactive'] as $i => $label) {
             AppMaster::updateOrCreate(

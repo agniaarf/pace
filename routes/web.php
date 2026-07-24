@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DiscountController;
+use App\Http\Controllers\Admin\LoyaltySettingController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReportController;
@@ -93,6 +94,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         Route::post('/returns/{return}/approve', [AdminReturnController::class, 'approve'])->name('admin.returns.approve');
         Route::post('/returns/{return}/reject', [AdminReturnController::class, 'reject'])->name('admin.returns.reject');
     });
+
+    // Loyalty settings
+    Route::middleware('permission:settings.view')->get('/loyalty/settings', [LoyaltySettingController::class, 'index'])->name('admin.loyalty.settings');
+    Route::middleware('permission:settings.update')->post('/loyalty/settings', [LoyaltySettingController::class, 'update']);
 });
 
 // Kasir routes
