@@ -60,7 +60,7 @@ class DashboardController extends Controller
                 'totalProducts' => Product::count(),
                 'totalCustomers' => Customer::count(),
                 'totalTransactions' => Transaction::count(),
-                'lowStockCount' => Stock::where('quantity', '<=', 5)->count(),
+                'lowStockCount' => Stock::where(fn ($q) => $q->whereColumn('quantity', '<=', 'minimum_quantity')->orWhere('quantity', '<=', 0))->count(),
                 'totalRevenue' => $totalRevenue,
                 'todayRevenue' => $todayRevenue,
             ],

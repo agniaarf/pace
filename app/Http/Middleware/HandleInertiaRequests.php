@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Shift;
+use App\Models\Stock;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -66,6 +67,13 @@ class HandleInertiaRequests extends Middleware
                     'opening_balance' => (float) $shift->opening_balance,
                     'opened_at' => $shift->opened_at->toDateTimeString(),
                 ] : null;
+            },
+            'lowStockAlertCount' => function () use ($user) {
+                if (!$user || !$user->isAdmin()) {
+                    return 0;
+                }
+
+                return Stock::where(fn ($q) => $q->whereColumn('quantity', '<=', 'minimum_quantity')->orWhere('quantity', '<=', 0))->count();
             },
         ];
     }

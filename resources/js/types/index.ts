@@ -75,6 +75,7 @@ export interface SharedProps {
     flash: FlashMessages;
     requireShift: boolean;
     activeShift: ActiveShift | null;
+    lowStockAlertCount: number;
 }
 
 export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> =

@@ -17,6 +17,7 @@ export interface NavItem {
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     permission?: string;
+    badge?: number;
 }
 
 interface AppLayoutProps {
@@ -121,8 +122,22 @@ export default function AppLayout({ children, navItems, activeRoute, title, subt
                                         className="absolute -left-3 top-1/2 h-7 w-1.5 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-orange-400 to-primary shadow-[0_0_8px_rgba(234,88,12,0.6)]"
                                     />
                                 )}
-                                <Icon className="h-5 w-5 shrink-0" />
-                                {!collapsed && item.label}
+                                <span className="relative shrink-0">
+                                    <Icon className="h-5 w-5" />
+                                    {collapsed && !!item.badge && (
+                                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-destructive" />
+                                    )}
+                                </span>
+                                {!collapsed && (
+                                    <span className="flex flex-1 items-center justify-between">
+                                        {item.label}
+                                        {!!item.badge && (
+                                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}
