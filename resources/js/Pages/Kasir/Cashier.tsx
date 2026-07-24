@@ -34,7 +34,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PageProps, TransactionReceipt } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -109,6 +109,7 @@ export default function Cashier() {
     const { toast } = useToast();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [selectedCustomer, setSelectedCustomer] = useState<CashierCustomer | null>(null);
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
@@ -158,6 +159,29 @@ export default function Cashier() {
             }
             return [...prev, { product, quantity: 1 }];
         });
+    };
+
+    useEffect(() => {
+        if (step === 'produk') {
+            searchInputRef.current?.focus();
+        }
+    }, [step]);
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const code = search.trim();
+        if (!code) return;
+        const match = products.find(p => p.barcode === code);
+        if (match) {
+            if (match.stock <= 0) {
+                toast(`"${displayName(match)}" habis stok.`, 'error');
+            } else {
+                addToCart(match);
+                toast(`${displayName(match)} ditambahkan ke keranjang.`, 'success');
+            }
+            setSearch('');
+        }
     };
 
     const displayName = (product: CashierProduct) =>
@@ -350,9 +374,11 @@ export default function Cashier() {
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
+                                ref={searchInputRef}
                                 placeholder="Cari produk atau pindai barcode..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleSearchKeyDown}
                                 className="pl-10"
                             />
                         </div>

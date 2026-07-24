@@ -23,7 +23,8 @@ import { Textarea } from '@/Components/ui/textarea';
 import { DataTable, type Column } from '@/Components/DataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Edit, Layers, Package, Plus, Trash2 } from 'lucide-react';
+import { Edit, Layers, Package, Plus, Printer, Trash2 } from 'lucide-react';
+import BarcodeLabel from '@/Components/BarcodeLabel';
 import { FormEventHandler, useMemo, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
@@ -64,6 +65,8 @@ const variantLabel = (v: { size: string | null; color: string | null }) => {
     return parts.length ? parts.join(' / ') : 'Default';
 };
 
+const variantPrice = (product: Product, variant: Variant) => Number(product.selling_price) + Number(variant.price_adjustment);
+
 const totalStock = (p: Product) => p.variants.reduce((sum, v) => sum + (v.stock?.quantity ?? 0), 0);
 const minStock = (p: Product) => Math.min(...p.variants.map((v) => v.stock?.minimum_quantity ?? 0));
 
@@ -84,6 +87,7 @@ export default function ProductsIndex() {
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
     const [deleteVariantId, setDeleteVariantId] = useState<number | null>(null);
+    const [printVariants, setPrintVariants] = useState<Variant[] | null>(null);
 
     const deleteForm = useForm();
     const deleteVariantForm = useForm();
@@ -243,6 +247,14 @@ export default function ProductsIndex() {
                 onSuccess: () => setVariantDialogOpen(false),
             });
         }
+    };
+
+    const openPrintVariant = (variant: Variant) => setPrintVariants([variant]);
+    const openPrintAllVariants = () => {
+        if (!variantsProduct) return;
+        const withBarcode = variantsProduct.variants.filter((v) => v.barcode);
+        if (withBarcode.length === 0) return;
+        setPrintVariants(withBarcode);
     };
 
     const handleDeleteVariant = () => {
@@ -539,6 +551,9 @@ export default function ProductsIndex() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-1">
+                                                <Button variant="ghost" size="icon" onClick={() => openPrintVariant(v)} disabled={!v.barcode} title={v.barcode ? 'Cetak Barcode' : 'Isi barcode dahulu'}>
+                                                    <Printer className="h-4 w-4" />
+                                                </Button>
                                                 <Button variant="ghost" size="icon" onClick={() => openEditVariant(v)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
@@ -561,6 +576,14 @@ export default function ProductsIndex() {
                     </div>
 
                     <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={openPrintAllVariants}
+                            disabled={!variantsProduct?.variants.some((v) => v.barcode)}
+                        >
+                            <Printer className="h-4 w-4" />Cetak Semua Barcode
+                        </Button>
                         <Button type="button" variant="outline" onClick={() => setVariantsProductId(null)}>Tutup</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -635,6 +658,33 @@ export default function ProductsIndex() {
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setDeleteVariantId(null)}>Batal</Button>
                         <Button type="button" variant="destructive" onClick={handleDeleteVariant}>Hapus</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Print Barcode Labels Dialog */}
+            <Dialog open={printVariants !== null} onOpenChange={(open) => !open && setPrintVariants(null)}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Cetak Label Barcode</DialogTitle>
+                        <DialogDescription>Label akan dicetak menggunakan dialog cetak browser Anda.</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-wrap justify-center gap-3 p-2" data-barcode-print>
+                        {printVariants?.map((v) => (
+                            <BarcodeLabel
+                                key={v.id}
+                                barcode={v.barcode as string}
+                                productName={variantsProduct?.name ?? ''}
+                                variantLabel={variantLabel(v)}
+                                price={variantsProduct ? variantPrice(variantsProduct, v) : undefined}
+                            />
+                        ))}
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setPrintVariants(null)}>Tutup</Button>
+                        <Button type="button" variant="gradient" onClick={() => window.print()}>
+                            <Printer className="h-4 w-4" />Cetak
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

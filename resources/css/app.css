@@ -553,5 +553,15 @@
     [data-receipt] * {
         visibility: visible;
     }
+    [data-barcode-print] {
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    [data-barcode-print] * {
+        visibility: visible;
+    }
 }
 
