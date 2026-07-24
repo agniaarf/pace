@@ -10,7 +10,6 @@ class Product extends Model
 {
     protected $fillable = [
         'category_id',
-        'discount_id',
         'name',
         'brand',
         'cost_price',
@@ -31,11 +30,6 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function discount(): BelongsTo
-    {
-        return $this->belongsTo(Discount::class);
     }
 
     public function variants(): HasMany

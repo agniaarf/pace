@@ -40,6 +40,8 @@ import { formatCurrency } from '@/lib/utils';
 
 interface CashierProduct {
     id: number;
+    product_id: number;
+    category_id: number | null;
     name: string;
     variant_label: string;
     sku: string | null;
@@ -48,7 +50,6 @@ interface CashierProduct {
     selling_price: number;
     stock: number;
     category: string | null;
-    discount: { id: number; name: string; type: 'percentage' | 'nominal'; value: number } | null;
 }
 
 interface CashierCustomer {
@@ -68,10 +69,14 @@ interface PaymentMethod {
 interface ActiveDiscount {
     id: number;
     name: string;
-    type: 'percentage' | 'nominal';
-    value: number;
-    applies_to: 'all' | 'product';
+    rule_type: 'percentage' | 'fixed' | 'buy_x_get_y' | 'bundle';
+    value: number | null;
+    target_type: 'all' | 'category' | 'product' | 'variant';
     target_ids: number[] | null;
+    min_qty: number;
+    buy_quantity: number | null;
+    get_quantity: number | null;
+    get_discount_percent: number;
 }
 
 interface CashierPageProps {
@@ -201,21 +206,60 @@ export default function Cashier() {
 
     const subtotal = cart.reduce((s, i) => s + i.product.selling_price * i.quantity, 0);
 
+    const matchesDiscountTarget = (d: ActiveDiscount, item: CartItem) => {
+        const targetIds = d.target_ids ?? [];
+        switch (d.target_type) {
+            case 'all': return true;
+            case 'category': return item.product.category_id !== null && targetIds.includes(item.product.category_id);
+            case 'product': return targetIds.includes(item.product.product_id);
+            case 'variant': return targetIds.includes(item.product.id);
+            default: return false;
+        }
+    };
+
+    const targetKeyFor = (d: ActiveDiscount, item: CartItem) => {
+        if (d.target_type === 'category') return item.product.category_id;
+        if (d.target_type === 'product') return item.product.product_id;
+        return item.product.id;
+    };
+
     const appliedDiscounts = useMemo(() => {
         if (cart.length === 0) return [];
         return activeDiscounts.flatMap(d => {
-            let base = 0;
-            if (d.applies_to === 'all') {
-                base = subtotal;
-            } else if (d.applies_to === 'product') {
-                const targetIds = d.target_ids ?? [];
-                base = cart.filter(i => targetIds.includes(i.product.id)).reduce((s, i) => s + i.product.selling_price * i.quantity, 0);
+            const targetItems = cart.filter(i => matchesDiscountTarget(d, i));
+            if (targetItems.length === 0) return [];
+
+            let amount = 0;
+
+            if (d.rule_type === 'percentage' || d.rule_type === 'fixed') {
+                const totalQty = targetItems.reduce((s, i) => s + i.quantity, 0);
+                if (totalQty < Math.max(1, d.min_qty)) return [];
+                const base = targetItems.reduce((s, i) => s + i.product.selling_price * i.quantity, 0);
+                amount = d.rule_type === 'percentage' ? Math.round(base * (d.value ?? 0) / 100) : Math.min(d.value ?? 0, base);
+            } else if (d.rule_type === 'buy_x_get_y') {
+                const buyQty = Math.max(1, d.buy_quantity ?? 1);
+                const getQty = Math.max(1, d.get_quantity ?? 1);
+                const setSize = buyQty + getQty;
+                const units: number[] = [];
+                targetItems.forEach(i => { for (let n = 0; n < i.quantity; n++) units.push(i.product.selling_price); });
+                units.sort((a, b) => a - b);
+                const sets = Math.floor(units.length / setSize);
+                const discountedUnitsCount = sets * getQty;
+                if (discountedUnitsCount > 0) {
+                    const discountedSum = units.slice(0, discountedUnitsCount).reduce((s, v) => s + v, 0);
+                    amount = Math.round(discountedSum * d.get_discount_percent / 100);
+                }
+            } else if (d.rule_type === 'bundle') {
+                const distinctTargets = new Set(targetItems.map(i => targetKeyFor(d, i))).size;
+                if (distinctTargets < Math.max(1, d.min_qty)) return [];
+                const base = targetItems.reduce((s, i) => s + i.product.selling_price * i.quantity, 0);
+                amount = Math.max(0, base - (d.value ?? 0));
             }
-            if (base <= 0) return [];
-            const amount = d.type === 'percentage' ? Math.round(base * d.value / 100) : Math.min(d.value, base);
+
+            if (amount <= 0) return [];
             return [{ name: d.name, amount }];
         });
-    }, [cart, subtotal, activeDiscounts]);
+    }, [cart, activeDiscounts]);
 
     const totalDiscount = appliedDiscounts.reduce((s, d) => s + d.amount, 0);
     const afterDiscount = subtotal - totalDiscount;
@@ -243,23 +287,53 @@ export default function Cashier() {
 
     const methodLabel = (id: number) => paymentMethods.find(m => m.id === id)?.label ?? 'Tunai';
 
+    // Tile-level preview only covers percentage/fixed rules with min_qty 1 — buy-x-get-y and
+    // bundle discounts are cart-level and only resolve to a concrete amount once quantities
+    // are known, so they're surfaced as a plain promo badge instead of a per-unit price.
     const getProductDiscount = (product: CashierProduct) => {
-        if (product.discount) return product.discount;
-        const global = activeDiscounts.find(d => d.applies_to === 'all');
-        return global ?? null;
+        const simple = activeDiscounts.filter(d => (d.rule_type === 'percentage' || d.rule_type === 'fixed') && (d.min_qty ?? 1) <= 1);
+        const matches = (d: ActiveDiscount) => {
+            const targetIds = d.target_ids ?? [];
+            switch (d.target_type) {
+                case 'all': return true;
+                case 'category': return product.category_id !== null && targetIds.includes(product.category_id);
+                case 'product': return targetIds.includes(product.product_id);
+                case 'variant': return targetIds.includes(product.id);
+                default: return false;
+            }
+        };
+        return simple.find(d => d.target_type === 'variant' && matches(d))
+            ?? simple.find(d => d.target_type === 'product' && matches(d))
+            ?? simple.find(d => d.target_type === 'category' && matches(d))
+            ?? simple.find(d => d.target_type === 'all')
+            ?? null;
+    };
+
+    const getPromoBadge = (product: CashierProduct) => {
+        const matches = (d: ActiveDiscount) => {
+            const targetIds = d.target_ids ?? [];
+            switch (d.target_type) {
+                case 'all': return true;
+                case 'category': return product.category_id !== null && targetIds.includes(product.category_id);
+                case 'product': return targetIds.includes(product.product_id);
+                case 'variant': return targetIds.includes(product.id);
+                default: return false;
+            }
+        };
+        return activeDiscounts.find(d => (d.rule_type === 'buy_x_get_y' || d.rule_type === 'bundle') && matches(d)) ?? null;
     };
 
     const discountedPrice = (product: CashierProduct) => {
         const d = getProductDiscount(product);
         if (!d) return product.selling_price;
-        if (d.type === 'percentage') return Math.round(product.selling_price * (1 - d.value / 100));
-        return Math.max(0, product.selling_price - d.value);
+        if (d.rule_type === 'percentage') return Math.round(product.selling_price * (1 - (d.value ?? 0) / 100));
+        return Math.max(0, product.selling_price - (d.value ?? 0));
     };
 
     const discountLabel = (product: CashierProduct) => {
         const d = getProductDiscount(product);
         if (!d) return '';
-        return d.type === 'percentage' ? `-${d.value}%` : `-${formatCurrency(d.value)}`;
+        return d.rule_type === 'percentage' ? `-${d.value}%` : `-${formatCurrency(d.value ?? 0)}`;
     };
 
     const handleCheckout = () => {
@@ -288,6 +362,7 @@ export default function Cashier() {
                         transaction_number: 'TRX-',
                         subtotal,
                         discount_amount: totalDiscount,
+                        discounts: appliedDiscounts,
                         tax_amount: taxAmount,
                         total_amount: totalAmount,
                         amount_paid: totalPaidSoFar,
@@ -386,6 +461,7 @@ export default function Cashier() {
                             {filteredProducts.map(p => {
                                 const inCart = cart.find(i => i.product.id === p.id);
                                 const hasDiscount = !!getProductDiscount(p);
+                                const promoBadge = getPromoBadge(p);
                                 const finalPrice = discountedPrice(p);
                                 const outOfStock = p.stock <= 0;
                                 return (
@@ -412,6 +488,11 @@ export default function Cashier() {
                                         <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
                                             <Package className="h-4 w-4 text-muted-foreground" />
                                         </div>
+                                        {!outOfStock && promoBadge && (
+                                            <span className="mb-1 inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                                                <Tag className="h-2.5 w-2.5" />{promoBadge.name}
+                                            </span>
+                                        )}
                                         <div className="mb-2 text-xs font-semibold leading-tight text-foreground">{displayName(p)}</div>
                                         <div className="flex items-end justify-between gap-1">
                                             <div>
@@ -776,7 +857,13 @@ export default function Cashier() {
                                 </div>
                                 <div className="space-y-1 border-t border-dashed border-border pt-2 text-xs">
                                     <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="font-mono">{formatCurrency(txResult.subtotal)}</span></div>
-                                    {txResult.discount_amount > 0 && <div className="flex justify-between text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span></div>}
+                                    {txResult.discounts && txResult.discounts.length > 0 ? (
+                                        txResult.discounts.map((d, idx) => (
+                                            <div key={idx} className="flex justify-between text-emerald-600"><span>{d.name}</span><span className="font-mono">−{formatCurrency(d.amount)}</span></div>
+                                        ))
+                                    ) : txResult.discount_amount > 0 && (
+                                        <div className="flex justify-between text-emerald-600"><span>Diskon</span><span className="font-mono">−{formatCurrency(txResult.discount_amount)}</span></div>
+                                    )}
                                     <div className="flex justify-between text-muted-foreground"><span>Pajak (11%)</span><span className="font-mono">{formatCurrency(txResult.tax_amount)}</span></div>
                                     <div className="flex justify-between border-t border-border pt-1 text-sm font-bold"><span>Total</span><span className="font-mono text-primary">{formatCurrency(txResult.total_amount)}</span></div>
                                     {txResult.payments && txResult.payments.length > 1 ? (

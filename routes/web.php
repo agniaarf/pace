@@ -63,8 +63,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     // Discounts
     Route::get('/discounts', [DiscountController::class, 'index'])->name('admin.discounts.index');
     Route::post('/discounts', [DiscountController::class, 'store']);
-    Route::get('/discounts/{discount}/products', [DiscountController::class, 'products'])->name('admin.discounts.products');
-    Route::post('/discounts/{discount}/products', [DiscountController::class, 'syncProducts']);
+    Route::get('/discounts/{discount}/targets', [DiscountController::class, 'targets'])->name('admin.discounts.targets');
+    Route::post('/discounts/{discount}/targets', [DiscountController::class, 'syncTargets']);
     Route::put('/discounts/{discount}', [DiscountController::class, 'update']);
     Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy']);
 

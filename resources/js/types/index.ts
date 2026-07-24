@@ -22,10 +22,16 @@ export interface PaymentBreakdown {
     reference_no: string | null;
 }
 
+export interface DiscountBreakdown {
+    name: string;
+    amount: number;
+}
+
 export interface TransactionReceipt {
     transaction_number: string;
     subtotal: number;
     discount_amount: number;
+    discounts: DiscountBreakdown[];
     tax_amount: number;
     total_amount: number;
     amount_paid: number;

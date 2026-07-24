@@ -3,16 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Discount extends Model
 {
     protected $fillable = [
         'name',
-        'type',
+        'rule_type',
         'value',
-        'applies_to',
+        'target_type',
         'target_ids',
+        'min_qty',
+        'buy_quantity',
+        'get_quantity',
+        'get_discount_percent',
         'start_date',
         'end_date',
         'status',
@@ -23,13 +26,9 @@ class Discount extends Model
         return [
             'target_ids' => 'array',
             'value' => 'decimal:2',
+            'get_discount_percent' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
         ];
-    }
-
-    public function products(): HasMany
-    {
-        return $this->hasMany(Product::class);
     }
 }

@@ -26,22 +26,42 @@ import { FormEventHandler, useState } from 'react';
 import type { PageProps } from '@/types';
 import { formatCurrency, formatNumberInput, parseNumberInput } from '@/lib/utils';
 
+type RuleType = 'percentage' | 'fixed' | 'buy_x_get_y' | 'bundle';
+type TargetType = 'all' | 'category' | 'product' | 'variant';
+
 interface Discount {
     id: number;
     name: string;
-    type: 'percentage' | 'nominal';
-    value: string;
-    applies_to: 'all' | 'product';
+    rule_type: RuleType;
+    value: string | null;
+    target_type: TargetType;
     target_ids: number[] | null;
+    min_qty: number;
+    buy_quantity: number | null;
+    get_quantity: number | null;
+    get_discount_percent: string;
     start_date: string | null;
     end_date: string | null;
     status: 'active' | 'inactive';
-    products_count: number;
 }
 
 interface DiscountsPageProps {
     discounts: Discount[];
 }
+
+const RULE_TYPE_LABELS: Record<RuleType, string> = {
+    percentage: 'Persentase (%)',
+    fixed: 'Nominal Tetap (Rp)',
+    buy_x_get_y: 'Beli X Gratis/Diskon Y',
+    bundle: 'Paket Bundling',
+};
+
+const TARGET_TYPE_LABELS: Record<TargetType, string> = {
+    all: 'Semua Produk',
+    category: 'Kategori Tertentu',
+    product: 'Produk Tertentu',
+    variant: 'Varian Tertentu',
+};
 
 export default function DiscountsIndex() {
     const { discounts, flash } = usePage<PageProps & DiscountsPageProps>().props;
@@ -53,9 +73,13 @@ export default function DiscountsIndex() {
     const deleteForm = useForm();
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: '',
-        type: 'percentage' as 'percentage' | 'nominal',
+        rule_type: 'percentage' as RuleType,
         value: '',
-        applies_to: 'all' as 'all' | 'product',
+        target_type: 'all' as TargetType,
+        min_qty: '1',
+        buy_quantity: '',
+        get_quantity: '',
+        get_discount_percent: '100',
         start_date: '',
         end_date: '',
         status: 'active' as 'active' | 'inactive',
@@ -67,14 +91,18 @@ export default function DiscountsIndex() {
         setEditing(d);
         setData({
             name: d.name,
-            type: d.type,
-            value: d.value,
-            applies_to: d.applies_to,
+            rule_type: d.rule_type,
+            value: d.value ?? '',
+            target_type: d.target_type,
+            min_qty: String(d.min_qty ?? 1),
+            buy_quantity: d.buy_quantity ? String(d.buy_quantity) : '',
+            get_quantity: d.get_quantity ? String(d.get_quantity) : '',
+            get_discount_percent: d.get_discount_percent ?? '100',
             start_date: d.start_date ?? '',
             end_date: d.end_date ?? '',
             status: d.status,
         });
-        setValueDisplay(d.type === 'nominal' ? formatNumberInput(d.value) : d.value);
+        setValueDisplay(d.rule_type === 'fixed' || d.rule_type === 'bundle' ? formatNumberInput(d.value ?? '0') : (d.value ?? ''));
         setDialogOpen(true);
     };
 
@@ -96,9 +124,13 @@ export default function DiscountsIndex() {
     };
 
     const formatDiscountValue = (d: Discount) => {
-        if (d.type === 'percentage') return `${d.value}%`;
-        return formatCurrency(Number(d.value));
+        if (d.rule_type === 'percentage') return `${d.value}%`;
+        if (d.rule_type === 'fixed') return formatCurrency(Number(d.value));
+        if (d.rule_type === 'buy_x_get_y') return `Beli ${d.buy_quantity}, dapat ${d.get_quantity} diskon ${d.get_discount_percent}%`;
+        return `Paket @ ${formatCurrency(Number(d.value))}`;
     };
+
+    const isMoneyValue = data.rule_type === 'fixed' || data.rule_type === 'bundle';
 
     const columns: Column<Discount>[] = [
         {
@@ -107,9 +139,9 @@ export default function DiscountsIndex() {
             render: (d) => <span className="font-medium">{d.name}</span>,
         },
         {
-            key: 'type',
-            header: 'Tipe',
-            render: (d) => <span className="capitalize">{d.type}</span>,
+            key: 'rule_type',
+            header: 'Tipe Aturan',
+            render: (d) => <span className="text-xs">{RULE_TYPE_LABELS[d.rule_type]}</span>,
         },
         {
             key: 'value',
@@ -117,9 +149,9 @@ export default function DiscountsIndex() {
             render: (d) => <span className="font-semibold text-primary">{formatDiscountValue(d)}</span>,
         },
         {
-            key: 'applies_to',
+            key: 'target_type',
             header: 'Berlaku Untuk',
-            render: (d) => <span className="capitalize">{d.applies_to}</span>,
+            render: (d) => <span className="text-xs">{TARGET_TYPE_LABELS[d.target_type]}</span>,
         },
         {
             key: 'period',
@@ -131,11 +163,13 @@ export default function DiscountsIndex() {
             ),
         },
         {
-            key: 'products_count',
-            header: 'Produk',
-            render: (d) => (
-                <Link href={`/admin/discounts/${d.id}/products`}>
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10">{d.products_count}</Badge>
+            key: 'target_ids',
+            header: 'Target',
+            render: (d) => d.target_type === 'all' ? (
+                <Badge variant="success">Semua</Badge>
+            ) : (
+                <Link href={`/admin/discounts/${d.id}/targets`}>
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10">{d.target_ids?.length ?? 0}</Badge>
                 </Link>
             ),
         },
@@ -151,13 +185,13 @@ export default function DiscountsIndex() {
             className: 'text-right',
             render: (d) => (
                 <div className="flex justify-end gap-1">
-                    <Link href={`/admin/discounts/${d.id}/products`}>
-                        <Button variant="ghost" size="icon" title="Kelola Produk"><ListChecks className="h-4 w-4" /></Button>
-                    </Link>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
-                    {d.status !== 'active' && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {d.target_type !== 'all' && (
+                        <Link href={`/admin/discounts/${d.id}/targets`}>
+                            <Button variant="ghost" size="icon" title="Kelola Target"><ListChecks className="h-4 w-4" /></Button>
+                        </Link>
                     )}
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
             ),
         },
@@ -166,7 +200,7 @@ export default function DiscountsIndex() {
     return (
         <>
             <Head title="Diskon" />
-            <AdminLayout title="Diskon" subtitle="Kelola diskon promosi" activeRoute="/admin/discounts">
+            <AdminLayout title="Diskon" subtitle="Kelola diskon, promosi, dan paket bundling" activeRoute="/admin/discounts">
                 <div className="space-y-6">
                     {flash.success && <div className="animate-fade-in rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">{flash.success}</div>}
                     {flash.error && <div className="animate-fade-in rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{flash.error}</div>}
@@ -191,7 +225,7 @@ export default function DiscountsIndex() {
                 <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editing ? 'Edit Diskon' : 'Tambah Diskon'}</DialogTitle>
-                        <DialogDescription>{editing ? 'Perbarui informasi diskon.' : 'Buat diskon promosi baru.'}</DialogDescription>
+                        <DialogDescription>{editing ? 'Perbarui informasi diskon.' : 'Buat diskon, promosi beli-dapat, atau paket bundling baru.'}</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
@@ -199,25 +233,31 @@ export default function DiscountsIndex() {
                             <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Summer Sale 20%" />
                             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
+
+                        <div className="space-y-2">
+                            <Label>Tipe Aturan</Label>
+                            <Select value={data.rule_type} onValueChange={(v) => {
+                                setData('rule_type', v as RuleType);
+                                setValueDisplay('');
+                                setData('value', '');
+                            }}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="percentage">Persentase (%)</SelectItem>
+                                    <SelectItem value="fixed">Nominal Tetap (Rp)</SelectItem>
+                                    <SelectItem value="buy_x_get_y">Beli X Gratis/Diskon Y</SelectItem>
+                                    <SelectItem value="bundle">Paket Bundling (Harga Spesial)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {data.rule_type !== 'buy_x_get_y' && (
                             <div className="space-y-2">
-                                <Label>Tipe</Label>
-                                <Select value={data.type} onValueChange={(v) => {
-                                    setData('type', v as 'percentage' | 'nominal');
-                                    setValueDisplay('');
-                                    setData('value', '');
-                                }}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                        <SelectItem value="nominal">Nominal (Rp)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="value">Nilai *</Label>
+                                <Label htmlFor="value">
+                                    {data.rule_type === 'bundle' ? 'Harga Paket Spesial (Rp) *' : 'Nilai *'}
+                                </Label>
                                 <Input id="value" type="text" inputMode="numeric" value={valueDisplay} onChange={(e) => {
-                                    if (data.type === 'nominal') {
+                                    if (isMoneyValue) {
                                         const formatted = formatNumberInput(e.target.value);
                                         setValueDisplay(formatted);
                                         setData('value', String(parseNumberInput(formatted)));
@@ -228,19 +268,53 @@ export default function DiscountsIndex() {
                                 }} placeholder="0" />
                                 {errors.value && <p className="text-xs text-destructive">{errors.value}</p>}
                             </div>
-                        </div>
+                        )}
+
+                        {data.rule_type === 'buy_x_get_y' && (
+                            <div className="grid gap-4 sm:grid-cols-3">
+                                <div className="space-y-2">
+                                    <Label htmlFor="buy_quantity">Beli (X) *</Label>
+                                    <Input id="buy_quantity" type="number" min={1} value={data.buy_quantity} onChange={(e) => setData('buy_quantity', e.target.value)} placeholder="e.g. 2" />
+                                    {errors.buy_quantity && <p className="text-xs text-destructive">{errors.buy_quantity}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="get_quantity">Dapat (Y) *</Label>
+                                    <Input id="get_quantity" type="number" min={1} value={data.get_quantity} onChange={(e) => setData('get_quantity', e.target.value)} placeholder="e.g. 1" />
+                                    {errors.get_quantity && <p className="text-xs text-destructive">{errors.get_quantity}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="get_discount_percent">Diskon Y (%)</Label>
+                                    <Input id="get_discount_percent" type="number" min={0} max={100} value={data.get_discount_percent} onChange={(e) => setData('get_discount_percent', e.target.value)} placeholder="100 = gratis" />
+                                </div>
+                            </div>
+                        )}
+
+                        {(data.rule_type === 'percentage' || data.rule_type === 'fixed' || data.rule_type === 'bundle') && (
+                            <div className="space-y-2">
+                                <Label htmlFor="min_qty">Jumlah Minimum Item</Label>
+                                <Input id="min_qty" type="number" min={1} value={data.min_qty} onChange={(e) => setData('min_qty', e.target.value)} placeholder="1" />
+                                <p className="text-xs text-muted-foreground">
+                                    {data.rule_type === 'bundle'
+                                        ? 'Jumlah target berbeda yang harus dibeli bersamaan agar harga paket berlaku.'
+                                        : 'Jumlah unit target minimum dalam keranjang agar diskon berlaku.'}
+                                </p>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label>Berlaku Untuk</Label>
-                            <Select value={data.applies_to} onValueChange={(v) => setData('applies_to', v as 'all' | 'product')}>
+                            <Select value={data.target_type} onValueChange={(v) => setData('target_type', v as TargetType)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Produk</SelectItem>
+                                    <SelectItem value="category">Kategori Tertentu</SelectItem>
                                     <SelectItem value="product">Produk Tertentu</SelectItem>
+                                    <SelectItem value="variant">Varian Tertentu</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {data.applies_to === 'product' && (
+                            {data.target_type !== 'all' && (
                                 <p className="text-xs text-muted-foreground">
-                                    Pilih produk di halaman terpisah setelah diskon dibuat/simpan.
+                                    Pilih target di halaman terpisah setelah diskon dibuat/simpan.
                                 </p>
                             )}
                         </div>

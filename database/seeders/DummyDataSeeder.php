@@ -59,30 +59,42 @@ class DummyDataSeeder extends Seeder
         $discounts = [
             [
                 'name' => 'Grand Opening Diskon 20%',
-                'type' => 'percentage',
+                'rule_type' => 'percentage',
                 'value' => 20,
-                'applies_to' => 'all',
+                'target_type' => 'all',
                 'target_ids' => null,
                 'start_date' => now()->subDays(30),
                 'end_date' => now()->addDays(60),
             ],
             [
                 'name' => 'Promo Sepatu Lari 15%',
-                'type' => 'percentage',
+                'rule_type' => 'percentage',
                 'value' => 15,
-                'applies_to' => 'product',
+                'target_type' => 'category',
                 'target_ids' => [$categories['sepatu-lari']->id],
                 'start_date' => now()->subDays(14),
                 'end_date' => now()->addDays(30),
             ],
             [
                 'name' => 'Flash Sale Nutrisi',
-                'type' => 'nominal',
+                'rule_type' => 'fixed',
                 'value' => 25000,
-                'applies_to' => 'product',
+                'target_type' => 'category',
                 'target_ids' => [$categories['nutrisi']->id],
                 'start_date' => now()->subDays(7),
                 'end_date' => now()->addDays(7),
+            ],
+            [
+                'name' => 'Beli 2 Gratis 1 Kaus Kaki',
+                'rule_type' => 'buy_x_get_y',
+                'value' => null,
+                'target_type' => 'category',
+                'target_ids' => [$categories['pakaian-olahraga']->id],
+                'buy_quantity' => 2,
+                'get_quantity' => 1,
+                'get_discount_percent' => 100,
+                'start_date' => now()->subDays(5),
+                'end_date' => now()->addDays(25),
             ],
         ];
 
@@ -143,14 +155,12 @@ class DummyDataSeeder extends Seeder
         ];
 
         $result = [];
-        $runningShoesDiscount = collect($discounts)->firstWhere('name', 'Promo Sepatu Lari 15%');
 
         foreach ($products as $p) {
             $product = Product::updateOrCreate(
                 ['sku' => $p['sku']],
                 [
                     'category_id' => $categories[$p['category']]->id,
-                    'discount_id' => ($p['category'] === 'sepatu-lari' && $runningShoesDiscount) ? $runningShoesDiscount->id : null,
                     'name' => $p['name'],
                     'brand' => $p['brand'],
                     'size' => $p['size'],

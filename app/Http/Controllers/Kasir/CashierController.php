@@ -23,13 +23,15 @@ class CashierController extends Controller
 {
     public function index(): Response
     {
-        $variants = ProductVariant::with(['product.category', 'product.discount', 'stock'])
+        $variants = ProductVariant::with(['product.category', 'stock'])
             ->where('status', 'active')
             ->whereHas('product', fn ($q) => $q->where('status', 'active'))
             ->orderBy('sku')
             ->get()
             ->map(fn ($v) => [
                 'id' => $v->id,
+                'product_id' => $v->product_id,
+                'category_id' => $v->product->category_id,
                 'name' => $v->product->name,
                 'variant_label' => $v->label(),
                 'sku' => $v->sku,
@@ -38,12 +40,6 @@ class CashierController extends Controller
                 'selling_price' => $v->sellingPrice(),
                 'stock' => $v->stock?->quantity ?? 0,
                 'category' => $v->product->category?->name,
-                'discount' => $v->product->discount ? [
-                    'id' => $v->product->discount->id,
-                    'name' => $v->product->discount->name,
-                    'type' => $v->product->discount->type,
-                    'value' => (float) $v->product->discount->value,
-                ] : null,
             ]);
 
         $customers = Customer::where('status', 'active')
@@ -55,10 +51,7 @@ class CashierController extends Controller
             ->orderBy('sort_order')
             ->get(['id', 'code', 'label']);
 
-        $activeDiscounts = Discount::where('status', 'active')
-            ->where(fn ($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', today()))
-            ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', today()))
-            ->get(['id', 'name', 'type', 'value', 'applies_to', 'target_ids']);
+        $activeDiscounts = $this->activeDiscounts();
 
         return Inertia::render('Kasir/Cashier', [
             'products' => $variants,
@@ -66,6 +59,102 @@ class CashierController extends Controller
             'paymentMethods' => $paymentMethods,
             'activeDiscounts' => $activeDiscounts,
         ]);
+    }
+
+    private function activeDiscounts(): \Illuminate\Support\Collection
+    {
+        return Discount::where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', today()))
+            ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', today()))
+            ->get([
+                'id', 'name', 'rule_type', 'value', 'target_type', 'target_ids',
+                'min_qty', 'buy_quantity', 'get_quantity', 'get_discount_percent',
+            ]);
+    }
+
+    private function discountMatchesItem(Discount $discount, array $item): bool
+    {
+        return match ($discount->target_type) {
+            'all' => true,
+            'category' => in_array($item['category_id'], $discount->target_ids ?? [], true),
+            'product' => in_array($item['product_id'], $discount->target_ids ?? [], true),
+            'variant' => in_array($item['variant_id'], $discount->target_ids ?? [], true),
+            default => false,
+        };
+    }
+
+    private function targetKeyFor(string $targetType): string
+    {
+        return match ($targetType) {
+            'category' => 'category_id',
+            'product' => 'product_id',
+            default => 'variant_id',
+        };
+    }
+
+    /**
+     * Authoritative cart-level discount calculation, covering all four rule types.
+     * $itemsData rows must each carry variant_id, product_id, category_id, quantity, unit_price, subtotal.
+     *
+     * @return array{amount: int, breakdown: array<int, array{name: string, amount: int}>}
+     */
+    private function calculateDiscounts(\Illuminate\Support\Collection $discounts, array $itemsData): array
+    {
+        $totalDiscount = 0;
+        $breakdown = [];
+
+        foreach ($discounts as $discount) {
+            $targetItems = collect($itemsData)->filter(fn ($i) => $this->discountMatchesItem($discount, $i));
+            if ($targetItems->isEmpty()) {
+                continue;
+            }
+
+            $amount = 0;
+
+            if (in_array($discount->rule_type, ['percentage', 'fixed'], true)) {
+                $totalQty = $targetItems->sum('quantity');
+                if ($totalQty < max(1, $discount->min_qty)) {
+                    continue;
+                }
+                $base = $targetItems->sum('subtotal');
+                $amount = $discount->rule_type === 'percentage'
+                    ? (int) round($base * (float) $discount->value / 100)
+                    : (int) min((float) $discount->value, $base);
+            } elseif ($discount->rule_type === 'buy_x_get_y') {
+                $buyQty = max(1, (int) $discount->buy_quantity);
+                $getQty = max(1, (int) $discount->get_quantity);
+                $setSize = $buyQty + $getQty;
+
+                $units = [];
+                foreach ($targetItems as $i) {
+                    for ($n = 0; $n < $i['quantity']; $n++) {
+                        $units[] = $i['unit_price'];
+                    }
+                }
+                sort($units);
+
+                $sets = intdiv(count($units), $setSize);
+                $discountedUnitsCount = $sets * $getQty;
+
+                if ($discountedUnitsCount > 0) {
+                    $amount = (int) round(array_sum(array_slice($units, 0, $discountedUnitsCount)) * (float) $discount->get_discount_percent / 100);
+                }
+            } elseif ($discount->rule_type === 'bundle') {
+                $distinctTargets = $targetItems->pluck($this->targetKeyFor($discount->target_type))->unique()->count();
+                if ($distinctTargets < max(1, $discount->min_qty)) {
+                    continue;
+                }
+                $base = $targetItems->sum('subtotal');
+                $amount = (int) max(0, $base - (float) $discount->value);
+            }
+
+            if ($amount > 0) {
+                $totalDiscount += $amount;
+                $breakdown[] = ['name' => $discount->name, 'amount' => $amount];
+            }
+        }
+
+        return ['amount' => $totalDiscount, 'breakdown' => $breakdown];
     }
 
     public function history(Request $request): Response
@@ -156,8 +245,13 @@ class CashierController extends Controller
             $subtotal = 0;
             $itemsData = [];
 
+            $variants = ProductVariant::with(['stock', 'product'])
+                ->whereIn('id', collect($validated['items'])->pluck('variant_id'))
+                ->get()
+                ->keyBy('id');
+
             foreach ($validated['items'] as $item) {
-                $variant = ProductVariant::with('stock')->findOrFail($item['variant_id']);
+                $variant = $variants[$item['variant_id']];
                 $stock = $variant->stock;
 
                 if (!$stock || $stock->quantity < $item['quantity']) {
@@ -169,6 +263,8 @@ class CashierController extends Controller
 
                 $itemsData[] = [
                     'variant_id' => $item['variant_id'],
+                    'product_id' => $variant->product_id,
+                    'category_id' => $variant->product->category_id,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'item_discount' => 0,
@@ -176,33 +272,12 @@ class CashierController extends Controller
                 ];
             }
 
-            $discountAmount = 0;
-            $activeDiscounts = Discount::where('status', 'active')
-                ->where(fn ($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', today()))
-                ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', today()))
-                ->get();
+            $discountResult = $this->calculateDiscounts($this->activeDiscounts(), $itemsData);
+            $discountAmount = $discountResult['amount'];
 
-            $variantProductMap = ProductVariant::whereIn('id', collect($itemsData)->pluck('variant_id'))
-                ->pluck('product_id', 'id');
-
-            foreach ($activeDiscounts as $discount) {
-                if ($discount->applies_to === 'all') {
-                    $base = $subtotal;
-                } elseif ($discount->applies_to === 'product') {
-                    $targetIds = $discount->target_ids ?? [];
-                    $base = collect($itemsData)
-                        ->filter(fn ($i) => in_array($variantProductMap[$i['variant_id']] ?? null, $targetIds))
-                        ->sum('subtotal');
-                } else {
-                    $base = 0;
-                }
-
-                if ($base > 0) {
-                    $discountAmount += $discount->type === 'percentage'
-                        ? round($base * $discount->value / 100)
-                        : min($discount->value, $base);
-                }
-            }
+            // item_discount/product_id/category_id were only needed for the discount
+            // calculation above; TransactionItem::create() below ignores unknown keys
+            // via mass-assignment guarding, so no further stripping is needed.
 
             $afterDiscount = $subtotal - $discountAmount;
             $taxAmount = round($afterDiscount * 0.11);
@@ -282,6 +357,7 @@ class CashierController extends Controller
                 'transaction_number' => $transaction->transaction_number,
                 'subtotal' => (float) $transaction->subtotal,
                 'discount_amount' => (float) $transaction->discount_amount,
+                'discounts' => $discountResult['breakdown'],
                 'tax_amount' => (float) $transaction->tax_amount,
                 'total_amount' => (float) $transaction->total_amount,
                 'amount_paid' => (float) $transaction->amount_paid,
